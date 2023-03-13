@@ -8,3 +8,5 @@ FORUM_SUPERGROUP_ID=-100123456789
 # Удалять или нет подтверждения об отправке сообщений от юзера админам.
 # Чтобы удалялось, укажите "yes", "1" или "true" (без кавычек)
 REMOVE_SENT_CONFIRMATION=yes
+
+REDIS_DSN=redis://127.0.0.1?decode_responses=True
