@@ -1,0 +1,10 @@
+# rename this file to .env (with leading dot)
+
+# Токен бота, можно получить у https://t.me/botfather
+BOT_TOKEN=1234567890:AaBbCcDdEeFGgHhIiJjKkLlMmNnOoPpQq
+
+FORUM_SUPERGROUP_ID=-100123456789
+
+# Удалять или нет подтверждения об отправке сообщений от юзера админам.
+# Чтобы удалялось, укажите "yes", "1" или "true" (без кавычек)
+REMOVE_SENT_CONFIRMATION=yes
