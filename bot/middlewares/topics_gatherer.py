@@ -2,6 +2,7 @@ from typing import Any, Awaitable, Callable, Dict
 
 import structlog
 from aiogram import BaseMiddleware, Bot
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import TelegramObject, Message, User, ForumTopic
 from cachetools import LRUCache
 from redis.asyncio.client import Redis
@@ -23,7 +24,7 @@ class TopicsMiddleware(BaseMiddleware):
         # If someone accidentally tried to add this middleware
         # to anything but messages, just ignore it
         if not isinstance(event, Message):
-            log.warn("Middleware used not for Message, but for %s", type(event))
+            log.warn("%s used not for Message, but for %s", self.__class__.__name__, type(event))
             return await handler(event, data)
 
         event: Message
@@ -45,10 +46,19 @@ class TopicsMiddleware(BaseMiddleware):
         else:
             # Creating new forum topic
             bot: Bot = data["bot"]
-            new_topic: ForumTopic = await bot.create_forum_topic(data["forum_chat_id"], f"id{user.id}")
-            log.debug("Created new topic with id %s", new_topic.message_thread_id)
-            await self.redis.hset(name=redis_hash_name, key=str(user.id), value=str(new_topic.message_thread_id))
-            self.cache[user.id] = new_topic.message_thread_id
-            data["thread_id"] = new_topic.message_thread_id
+            try:
+                new_topic: ForumTopic = await bot.create_forum_topic(data["forum_chat_id"], f"id{user.id}")
+            except TelegramBadRequest as ex:
+                log.error(
+                    event="Could not create new topic",
+                    error_type=ex.__class__.__name__, message=ex.message,
+                    method=ex.method.__class__.__name__, method_args=ex.method.dict()
+                )
+                data["thread_id"] = 0  # default topic
+            else:
+                log.debug("Created new topic with id %s", new_topic.message_thread_id)
+                await self.redis.hset(name=redis_hash_name, key=str(user.id), value=str(new_topic.message_thread_id))
+                self.cache[user.id] = new_topic.message_thread_id
+                data["thread_id"] = new_topic.message_thread_id
 
         return await handler(event, data)
