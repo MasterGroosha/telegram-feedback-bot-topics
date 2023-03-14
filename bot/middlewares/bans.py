@@ -1,9 +1,9 @@
-from typing import Any, Awaitable, Callable, Dict, NamedTuple
 from asyncio import sleep
+from typing import Any, Awaitable, Callable, Dict, NamedTuple
 
 import structlog
 from aiogram import BaseMiddleware
-from aiogram.exceptions import TelegramAPIError, TelegramForbiddenError
+from aiogram.exceptions import TelegramForbiddenError
 from aiogram.types import TelegramObject, Message, User
 from cachetools import LRUCache
 from redis.asyncio.client import Redis
@@ -67,6 +67,7 @@ class BansMiddleware(BaseMiddleware):
                 await cache.callback_func()
                 return  # break update flow
 
+            # Step 2. Try to find user in Redis cache
             user_in_cache: bool = await self.redis.sismember(cache.redis_name, str(user.id))
             if user_in_cache:
                 log.debug("User %s found in Redis %s cache", user.id, cache.redis_name)
