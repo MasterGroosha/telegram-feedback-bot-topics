@@ -1,7 +1,9 @@
-from .topics_gatherer import TopicsMiddleware
 from .bans import BansMiddleware
+# from .messages_connector import MessagesConnectorMiddleware
+from .topics_management import TopicsManagementMiddleware
 
 __all__ = [
-    "TopicsMiddleware",
-    "BansMiddleware"
+    "TopicsManagementMiddleware",
+    "BansMiddleware",
+    # "MessagesConnectorMiddleware",
 ]
