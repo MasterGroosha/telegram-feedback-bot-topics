@@ -1,8 +1,12 @@
-from aiogram import Router
+import structlog
+from aiogram import Router, F
+from aiogram.enums.chat_type import ChatType
 from aiogram.filters import Command
 from aiogram.types import Message
 
 router = Router()
+router.message.filter(F.chat.type == ChatType.PRIVATE)
+log: structlog.BoundLogger = structlog.get_logger()
 
 
 @router.message(Command("start"))
