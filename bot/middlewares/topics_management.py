@@ -1,3 +1,4 @@
+from textwrap import dedent
 from typing import Any, Awaitable, Callable, Dict
 from typing import NamedTuple
 
@@ -5,7 +6,7 @@ import structlog
 from aiogram import BaseMiddleware, Bot
 from aiogram.enums import ContentType, MessageEntityType
 from aiogram.exceptions import TelegramBadRequest
-from aiogram.types import TelegramObject, Message, ForumTopic
+from aiogram.types import TelegramObject, Message, ForumTopic, User
 from cachetools import LRUCache
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
@@ -46,13 +47,29 @@ class TopicsManagementMiddleware(BaseMiddleware):
             self.cache[user_topic_data["user_id"]] = user_topic_data
             return user_topic_data["user_id"]
 
-    async def create_new_topic(self, bot: Bot, supergroup_id: int, user_id: int):
+    def prepare_first_topic_message(self, user: User) -> str:
+        username = f"@{user.username}" if user.username else "no"
+        premium = "yes" if user.is_premium else "no"
+        language_code = user.language_code if user.language_code else "no"
+
+        text = f""" \
+        New user chat!
+        
+        {user.full_name}
+        ├── Telegram ID: {user.id}
+        ├── Username: {username}
+        ├── Language: {premium}
+        └── Premium: {language_code}
+        """
+        return dedent(text)
+
+    async def create_new_topic(self, bot: Bot, supergroup_id: int, message: Message):
         try:
-            new_topic: ForumTopic = await bot.create_forum_topic(supergroup_id, f"id{user_id}")
+            new_topic: ForumTopic = await bot.create_forum_topic(supergroup_id, message.from_user.full_name[:127])
             first_topic_message = await bot.send_message(
                 supergroup_id,
                 message_thread_id=new_topic.message_thread_id,
-                text="Topic created!"  # todo: better first message
+                text=self.prepare_first_topic_message(message.from_user)
             )
         except TelegramBadRequest as ex:
             log.error(
@@ -63,8 +80,8 @@ class TopicsManagementMiddleware(BaseMiddleware):
             return NewTopicData(None, None)
         else:
             log.debug("Created new topic with id %s", new_topic.message_thread_id)
-            self.cache[user_id] = {
-                "user_id": user_id,
+            self.cache[message.from_user.id] = {
+                "user_id": message.from_user.id,
                 "topic_id": new_topic.message_thread_id,
                 "first_message_id": new_topic.message_thread_id
             }
@@ -136,7 +153,7 @@ class TopicsManagementMiddleware(BaseMiddleware):
                 new_topic: NewTopicData = await self.create_new_topic(
                     bot=data["bot"],
                     supergroup_id=data["forum_chat_id"],
-                    user_id=event.from_user.id
+                    message=event
                 )
                 data.update(
                     topic_id=new_topic.topic_id,
