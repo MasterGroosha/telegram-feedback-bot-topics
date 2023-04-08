@@ -1,11 +1,11 @@
-from pydantic import BaseSettings, SecretStr, RedisDsn
+from pydantic import BaseSettings, SecretStr, MongoDsn
 
 
 class Settings(BaseSettings):
     bot_token: SecretStr
     forum_supergroup_id: int
     remove_sent_confirmation: bool
-    redis_dsn: RedisDsn
+    mongo_dsn: MongoDsn
 
     class Config:
         env_file = '.env'
