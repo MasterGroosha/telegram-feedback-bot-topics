@@ -3,6 +3,7 @@ from typing import NamedTuple
 
 import structlog
 from aiogram import BaseMiddleware, Bot
+from aiogram.enums import ContentType
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import TelegramObject, Message, ForumTopic
 from cachetools import LRUCache
@@ -69,6 +70,27 @@ class TopicsManagementMiddleware(BaseMiddleware):
             }
             return NewTopicData(new_topic.message_thread_id, first_topic_message.message_id)
 
+    def is_service_message(self, message: Message) -> bool:
+        return message.content_type in {
+            ContentType.NEW_CHAT_MEMBERS, ContentType.LEFT_CHAT_MEMBER,
+            ContentType.NEW_CHAT_TITLE,
+            ContentType.NEW_CHAT_PHOTO, ContentType.DELETE_CHAT_PHOTO,
+            ContentType.GROUP_CHAT_CREATED, ContentType.SUPERGROUP_CHAT_CREATED, ContentType.CHANNEL_CHAT_CREATED,
+            ContentType.MESSAGE_AUTO_DELETE_TIMER_CHANGED,
+            ContentType.MIGRATE_TO_CHAT_ID, ContentType.MIGRATE_FROM_CHAT_ID,
+            ContentType.PINNED_MESSAGE,
+            ContentType.SUCCESSFUL_PAYMENT,
+            ContentType.USER_SHARED, ContentType.CHAT_SHARED,
+            ContentType.WRITE_ACCESS_ALLOWED,
+            ContentType.PROXIMITY_ALERT_TRIGGERED,
+            ContentType.FORUM_TOPIC_CREATED, ContentType.FORUM_TOPIC_EDITED,
+            ContentType.FORUM_TOPIC_CLOSED, ContentType.FORUM_TOPIC_REOPENED,
+            ContentType.GENERAL_FORUM_TOPIC_HIDDEN, ContentType.GENERAL_FORUM_TOPIC_UNHIDDEN,
+            ContentType.VIDEO_CHAT_SCHEDULED, ContentType.VIDEO_CHAT_STARTED,
+            ContentType.VIDEO_CHAT_ENDED, ContentType.VIDEO_CHAT_PARTICIPANTS_INVITED,
+            ContentType.WEB_APP_DATA
+        }
+
     async def __call__(
             self,
             handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
@@ -82,6 +104,10 @@ class TopicsManagementMiddleware(BaseMiddleware):
             return await handler(event, data)
 
         event: Message
+
+        # Ignore "service messages" and other irrelevant content types
+        if self.is_service_message(event):
+            return
 
         if event.chat.id == data["forum_chat_id"]:
             # If the message comes from forum supergroup, find relevant user id
