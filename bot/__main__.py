@@ -13,7 +13,7 @@ log: structlog.BoundLogger = structlog.get_logger()
 
 
 async def main():
-    mongodb_client = motor.motor_asyncio.AsyncIOMotorClient("localhost", 27017, username="user", password="password", authSource='bot')
+    mongodb_client = motor.motor_asyncio.AsyncIOMotorClient(config.mongo_dsn)
     mongodb_connection = mongodb_client.bot
 
     # bans_cache = LRUCache(maxsize=5000)
