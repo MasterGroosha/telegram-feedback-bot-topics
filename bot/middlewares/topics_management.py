@@ -3,7 +3,7 @@ from typing import NamedTuple
 
 import structlog
 from aiogram import BaseMiddleware, Bot
-from aiogram.enums import ContentType
+from aiogram.enums import ContentType, MessageEntityType
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import TelegramObject, Message, ForumTopic
 from cachetools import LRUCache
@@ -91,6 +91,14 @@ class TopicsManagementMiddleware(BaseMiddleware):
             ContentType.WEB_APP_DATA
         }
 
+    def is_start_message(self, message: Message):
+        if message.entities is None:
+            return False
+        if message.entities[0].type == MessageEntityType.BOT_COMMAND and \
+                message.entities[0].extract_from(message.text) == "/start":
+            return True
+        return False
+
     async def __call__(
             self,
             handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
@@ -114,6 +122,9 @@ class TopicsManagementMiddleware(BaseMiddleware):
             user_id = await self.find_user_by_topic(event.message_thread_id)
             data.update(user_id=user_id)
         else:
+            if self.is_start_message(event):
+                return await handler(event, data)
+
             topic_info = await self.find_topic_by_user(event.from_user.id)
             if topic_info:
                 data.update(
