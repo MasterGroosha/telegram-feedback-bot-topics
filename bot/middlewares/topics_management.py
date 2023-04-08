@@ -88,7 +88,8 @@ class TopicsManagementMiddleware(BaseMiddleware):
             ContentType.GENERAL_FORUM_TOPIC_HIDDEN, ContentType.GENERAL_FORUM_TOPIC_UNHIDDEN,
             ContentType.VIDEO_CHAT_SCHEDULED, ContentType.VIDEO_CHAT_STARTED,
             ContentType.VIDEO_CHAT_ENDED, ContentType.VIDEO_CHAT_PARTICIPANTS_INVITED,
-            ContentType.WEB_APP_DATA
+            ContentType.WEB_APP_DATA,
+            ContentType.UNKNOWN
         }
 
     def is_start_message(self, message: Message):
