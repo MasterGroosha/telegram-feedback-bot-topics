@@ -18,6 +18,6 @@ async def no_user_id(message: Message):
 
 
 @router.message()
-async def any_message(message: Message, user_id: int | None):
-    msg: Message = await message.send_copy(chat_id=user_id)
+async def any_message(message: Message, user_id: int | None, reply_to_id: int | None = None):
+    msg: Message = await message.send_copy(chat_id=user_id, reply_to_message_id=reply_to_id)
     return msg

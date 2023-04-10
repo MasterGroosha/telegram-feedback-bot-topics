@@ -1,6 +1,8 @@
 import structlog
 from aiogram import Router, F
-from aiogram.types import Message, KeyboardButton
+from aiogram.filters import Command
+from aiogram.types import Message
+
 from bot.config_reader import config
 
 router = Router(name="From Users Router")
@@ -10,9 +12,19 @@ log: structlog.BoundLogger = structlog.get_logger()
 router.message.filter(F.chat.type == "private")
 
 
+@router.message(Command("start"))
+async def cmd_start(message: Message):
+    await message.answer("% Start command text %")
+
+
 @router.message()
-async def any_message(message: Message, topic_id: int):
-    msg: Message = await message.send_copy(chat_id=config.forum_supergroup_id, message_thread_id=topic_id)
+async def any_message(message: Message, topic_id: int, reply_to_id: int | None = None):
+    print(f"Replying to {reply_to_id}")
+    msg: Message = await message.send_copy(
+        chat_id=config.forum_supergroup_id,
+        message_thread_id=topic_id,
+        reply_to_message_id=reply_to_id
+    )
     return msg
 
 
