@@ -8,7 +8,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 log: structlog.BoundLogger = structlog.get_logger()
 
 
-class MessagesConnectorMiddleware(BaseMiddleware):
+class RepliesMiddleware(BaseMiddleware):
     def __init__(self, mongo: AsyncIOMotorDatabase):
         self.mongo = mongo
 

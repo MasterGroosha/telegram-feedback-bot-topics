@@ -7,7 +7,7 @@ from aiogram import Bot, Dispatcher
 
 from bot.config_reader import config
 from bot.handlers import from_users, from_forum
-from bot.middlewares import TopicsManagementMiddleware, MessagesConnectorMiddleware
+from bot.middlewares import TopicsManagementMiddleware, RepliesMiddleware
 
 log: structlog.BoundLogger = structlog.get_logger()
 
@@ -24,7 +24,7 @@ async def main():
 
     # from_users.router.message.middleware(BansMiddleware(redis_connection, bans_cache, shadowbans_cache))
     dp.message.outer_middleware(TopicsManagementMiddleware(mongodb_connection))
-    dp.message.middleware(MessagesConnectorMiddleware(mongodb_connection))
+    dp.message.middleware(RepliesMiddleware(mongodb_connection))
     dp.include_router(from_users.router)
     dp.include_router(from_forum.router)
 
