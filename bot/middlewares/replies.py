@@ -40,13 +40,25 @@ class RepliesMiddleware(BaseMiddleware):
         event: Message
         is_incoming_message: bool = (event.chat.id != data["forum_chat_id"])
 
+        # Prepare to write message data to MongoDB
         message_data = {
             "incoming": is_incoming_message,
             "from_chat_id": event.chat.id,
             "from_message_id": event.message_id,
         }
 
-        if event.reply_to_message:
+        """
+        If message itself is reply, the following logic is applied:
+        0. If message is reply to FORUM_TOPIC_CREATED service message, ignore
+        1. Find out, which message is in reply: from user (their own message) or from bot ( == from another party)
+        2. Prepare filters to search in MongoDB:
+        2a. If message comes from bot, then user replies to other person's message in other chat.
+            Thus, we use this replied message's id as "TO:"
+        2b. If message comes from user, then user replies to their own message in the same chat.
+            This, we use this replied message's id as "FROM:"
+        3. Pass the other message ID to handlers
+        """
+        if event.reply_to_message and not event.reply_to_message.forum_topic_created:
             bot: Bot = data["bot"]
             is_from_bot: bool = event.reply_to_message.from_user.id == bot.id
             replied_message = await self.get_message_by_id(
@@ -63,9 +75,11 @@ class RepliesMiddleware(BaseMiddleware):
         if not outgoing_message:
             return
 
+        # Add more message data details
         message_data.update(
             to_chat_id=outgoing_message.chat.id,
             to_message_id=outgoing_message.message_id
         )
 
+        # Writing data to MongoDB
         await self.mongo.messages.insert_one(message_data)
