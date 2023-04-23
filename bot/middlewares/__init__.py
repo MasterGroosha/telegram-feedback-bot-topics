@@ -1,11 +1,11 @@
-from .bans import BansMiddleware
+from .db import DbSessionMiddleware
 from .edited_messages import EditedMessagesMiddleware
 from .replies import RepliesMiddleware
 from .topics_management import TopicsManagementMiddleware
 
 __all__ = [
-    "TopicsManagementMiddleware",
-    "BansMiddleware",
+    "DbSessionMiddleware",
+    "EditedMessagesMiddleware",
     "RepliesMiddleware",
-    "EditedMessagesMiddleware"
+    "TopicsManagementMiddleware",
 ]
