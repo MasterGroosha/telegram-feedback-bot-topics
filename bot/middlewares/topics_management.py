@@ -84,8 +84,8 @@ class TopicsManagementMiddleware(BaseMiddleware):
         {user.full_name}
         ├── Telegram ID: {user.id}
         ├── Username: {username}
-        ├── Language: {premium}
-        └── Premium: {language_code}
+        ├── Language: {language_code}
+        └── Premium: {premium}
         """
         return dedent(text)
 
