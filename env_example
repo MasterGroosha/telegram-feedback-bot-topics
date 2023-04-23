@@ -9,4 +9,14 @@ FORUM_SUPERGROUP_ID=-100123456789
 # Чтобы удалялось, укажите "yes", "1" или "true" (без кавычек)
 REMOVE_SENT_CONFIRMATION=yes
 
-REDIS_DSN=redis://127.0.0.1?decode_responses=True
+# Redis data. Do not add database number to DSN
+REDIS__DSN=redis://localhost
+REDIS__FSM_DB_ID=0
+REDIS__DATA_DB_ID=1
+
+# PostgreSQL Connection string
+POSTGRES_DSN=postgresql+psycopg://bot:password@127.0.0.1/telegram
+
+# FSM Mode: memory or redis
+# Use memory only for development, since all the data will be stored in RAM!
+FSM_MODE=redis
