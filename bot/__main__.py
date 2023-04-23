@@ -1,35 +1,47 @@
 import asyncio
 
-import motor.motor_asyncio
 import structlog
 from aiogram import Bot, Dispatcher
-# from cachetools import LRUCache
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.fsm.storage.redis import RedisStorage
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
-from bot.config_reader import config
-from bot.handlers import from_users, from_forum, message_edits
-from bot.middlewares import TopicsManagementMiddleware, RepliesMiddleware, EditedMessagesMiddleware
+from bot.config_reader import config, FSMModeEnum
+from bot.handlers import talk
+from bot.middlewares import TopicsManagementMiddleware, RepliesMiddleware, EditedMessagesMiddleware, DbSessionMiddleware
+
+# from cachetools import LRUCache
 
 log: structlog.BoundLogger = structlog.get_logger()
 
 
 async def main():
-    mongodb_client = motor.motor_asyncio.AsyncIOMotorClient(config.mongo_dsn)
-    mongodb_connection = mongodb_client.bot
+    engine = create_async_engine(url=config.postgres_dsn, echo=True)
+    sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
+
+    if config.fsm_mode == FSMModeEnum.MEMORY:
+        storage = MemoryStorage()
+    else:
+        storage = RedisStorage.from_url(
+            url=f"{config.redis.dsn}/{config.redis.fsm_db_id}",
+            connection_kwargs={"decode_responses": True}
+        )
 
     # bans_cache = LRUCache(maxsize=5000)
     # shadowbans_cache = LRUCache(maxsize=5000)
 
     bot = Bot(token=config.bot_token.get_secret_value())
-    dp = Dispatcher(forum_chat_id=config.forum_supergroup_id, mongo=mongodb_connection)
+    dp = Dispatcher(forum_chat_id=config.forum_supergroup_id, storage=storage)
 
-    # from_users.router.message.middleware(BansMiddleware(redis_connection, bans_cache, shadowbans_cache))
-    dp.message.outer_middleware(TopicsManagementMiddleware(mongodb_connection))
-    dp.message.middleware(RepliesMiddleware(mongodb_connection))
-    dp.edited_message.middleware(EditedMessagesMiddleware(mongodb_connection))
+    # Ensure that we always have PostgreSQL connection in middlewares
+    dp.message.outer_middleware(DbSessionMiddleware(sessionmaker))
+    dp.edited_message.outer_middleware(DbSessionMiddleware(sessionmaker))
 
-    dp.include_router(message_edits.router)
-    dp.include_router(from_users.router)
-    dp.include_router(from_forum.router)
+    talk.router.message.outer_middleware(TopicsManagementMiddleware())
+    talk.router.message.middleware(RepliesMiddleware())
+    talk.router.edited_message.middleware(EditedMessagesMiddleware())
+
+    dp.include_router(talk.router)
 
     await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
 
