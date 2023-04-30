@@ -34,5 +34,9 @@ async def any_message(message: Message, user_id: int, reply_to_id: int | None = 
     :param reply_to_id: if not None, this message should be a reply in user's PM
     :return: sent message object to save in DB later
     """
-    msg: Message = await message.send_copy(chat_id=user_id, reply_to_message_id=reply_to_id)
+    msg: Message = await message.send_copy(
+        chat_id=user_id,
+        reply_to_message_id=reply_to_id,
+        allow_sending_without_reply=True
+    )
     return msg

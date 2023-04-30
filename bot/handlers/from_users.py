@@ -35,6 +35,7 @@ async def any_message(message: Message, topic_id: int, reply_to_id: int | None =
     msg: Message = await message.send_copy(
         chat_id=config.forum_supergroup_id,
         message_thread_id=topic_id,
-        reply_to_message_id=reply_to_id
+        reply_to_message_id=reply_to_id,
+        allow_sending_without_reply=True
     )
     return msg
