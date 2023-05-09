@@ -1,6 +1,6 @@
 import structlog
 from aiogram import Router, F
-from aiogram.filters import MagicData
+from aiogram.filters import MagicData, Command
 from aiogram.types import Message
 
 from bot.config_reader import config
@@ -21,6 +21,17 @@ async def no_user_id(message: Message):
     :param message: message from Telegram
     """
     await message.answer("Error: couldn't find corresponding user_id. Message cannot be delivered")
+
+
+@router.message(Command(commands="note", prefix="!"))
+async def note(message: Message):
+    """
+    Handler to messages which start with "!note" command.
+    Such messages should be ignored.
+
+    :param message: any message which text or caption starts with "!note"
+    """
+    return
 
 
 @router.message()
