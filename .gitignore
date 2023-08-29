@@ -3,3 +3,4 @@
 .env
 /docker-compose.yml
 /redis-data/
+/settings.yml
