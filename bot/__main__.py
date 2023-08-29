@@ -12,7 +12,7 @@ from bot.middlewares import TopicsManagementMiddleware, RepliesMiddleware, Edite
 
 # from cachetools import LRUCache
 
-log: structlog.BoundLogger = structlog.get_logger()
+logger: structlog.BoundLogger = structlog.get_logger()
 
 
 async def main():
@@ -45,6 +45,7 @@ async def main():
 
     dp.include_router(talk_router)
 
+    await logger.ainfo("Starting Bot")
     await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
 
 
