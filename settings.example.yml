@@ -1,0 +1,24 @@
+#### Bot-specific settings ####
+bot:
+  # Bot's token. Obtain from https://t.me/BotFather
+  token: "1234567890:AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTt"
+  # ID of your supergroup with "forum" feature enabled
+  # To get ID of your supergroup, add @my_id_bot to it
+  forum_supergroup_id: -100987654321
+  # FSM Mode: "memory" or "redis". Do not use memory backend for production!
+  fsm_mode: "redis"
+  # Topics, which bot should ignore completely
+  ignored_topics_ids:
+    - 4
+    - 5
+    - 6
+
+#### Redis-specific settings ####
+redis:
+  # Connection string for your Redis Database
+  dsn: redis://redis_host/1
+
+#### PostgreSQL-specific settings ####
+postgres:
+  # Connection string for your PostgreSQL Database
+  dsn: postgresql+psycopg://bot:password@db_host/telegram
