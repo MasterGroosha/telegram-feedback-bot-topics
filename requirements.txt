@@ -20,6 +20,7 @@ psycopg==3.1.10
 psycopg-binary==3.1.10
 pydantic==2.3.0
 pydantic_core==2.6.3
+PyYAML==6.0.1
 redis==5.0.0
 SQLAlchemy==2.0.20
 structlog==23.1.0
