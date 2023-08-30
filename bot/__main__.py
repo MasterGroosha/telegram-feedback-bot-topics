@@ -32,7 +32,11 @@ async def main():
     # shadowbans_cache = LRUCache(maxsize=5000)
 
     bot = Bot(token=config.bot.token.get_secret_value())
-    dp = Dispatcher(forum_chat_id=config.bot.forum_supergroup_id, storage=storage)
+    dp = Dispatcher(
+        forum_chat_id=config.bot.forum_supergroup_id,
+        topics_to_ignore=config.bot.ignored_topics_ids,
+        storage=storage
+    )
 
     # Ensure that we always have PostgreSQL connection in middlewares
     dp.message.outer_middleware(DbSessionMiddleware(sessionmaker))
