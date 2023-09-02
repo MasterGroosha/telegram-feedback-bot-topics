@@ -4,6 +4,13 @@ from fluent.runtime import FluentLocalization, FluentResourceLoader
 
 
 def get_fluent_localization(language: str) -> FluentLocalization:
+    """
+    Loads FTL files for chosen language
+    :param language: language name, as passed from configuration outside
+    :return: FluentLocalization object with loaded FTL files for chosen language
+    """
+
+    # Check "locales" directory on the same level as this file
     locales_dir = Path(__file__).parent.joinpath("locales")
     if not locales_dir.exists():
         err = '"locales" directory does not exist'
