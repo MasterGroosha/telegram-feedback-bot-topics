@@ -24,5 +24,5 @@ and more...
 You can use [docker-compose.example.yml](docker-compose.example.yml) file to deploy PostgreSQL and Redis locally. 
 Fill new user and database data in [init-user-db.sh](postgres-firstrun/init-user-db.sh) file or do it manually.
 
-Use `settings.yml` (based on [settings.example.yml](settings.example.yml)) to fill the necessary options, then run this bot. 
-Docker images will follow soon.
+Use `settings.yml` (based on [settings.example.yml](settings.example.yml)) to fill the necessary options, place your localization 
+files (see relevant [README](bot/locales/example/README.md)), then run this bot. Docker images will follow soon.
