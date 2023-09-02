@@ -7,6 +7,7 @@ from aiogram.fsm.storage.redis import RedisStorage
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 from bot.config_reader import parse_settings, FSMModeEnum, Settings
+from bot.fluent_loader import get_fluent_localization
 from bot.handlers import get_shared_router
 from bot.middlewares import TopicsManagementMiddleware, RepliesMiddleware, EditedMessagesMiddleware, DbSessionMiddleware
 
@@ -31,11 +32,15 @@ async def main():
     # bans_cache = LRUCache(maxsize=5000)
     # shadowbans_cache = LRUCache(maxsize=5000)
 
+    # Loading localization for bot
+    l10n = get_fluent_localization(config.bot.language)
+
     bot = Bot(token=config.bot.token.get_secret_value())
     dp = Dispatcher(
         forum_chat_id=config.bot.forum_supergroup_id,
         topics_to_ignore=config.bot.ignored_topics_ids,
-        storage=storage
+        storage=storage,
+        l10n=l10n
     )
 
     # Ensure that we always have PostgreSQL connection in middlewares

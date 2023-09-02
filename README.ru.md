@@ -23,5 +23,5 @@
 Можно ориентироваться на [docker-compose.example.yml](docker-compose.example.yml) для локального запуска PostgreSQL и Redis. 
 Заполните данные в [init-user-db.sh](postgres-firstrun/init-user-db.sh) или создайте юзера с базой вручную.
 
-В файле `settings.yml` (основан на [settings.example.yml](settings.example.yml)) укажите настройки, и запустите бота.
-Docker-образы будут позднее.
+В файле `settings.yml` (основан на [settings.example.yml](settings.example.yml)) укажите настройки, подложите свои файлы 
+локализации, согласно [инструкции](bot/locales/example/README.ru.md), и запустите бота. Docker-образы будут позднее.
