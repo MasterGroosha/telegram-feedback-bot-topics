@@ -30,6 +30,7 @@ class BotSettings(BaseModel):
     forum_supergroup_id: int
     ignored_topics_ids: list[int] | None = None
     fsm_mode: FSMModeEnum
+    language: str
 
 
 class Settings(BaseModel):
