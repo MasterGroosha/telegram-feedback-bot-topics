@@ -26,6 +26,6 @@ def get_fluent_localization(language: str) -> FluentLocalization:
     for file in Path.iterdir(Path.joinpath(locales_dir, language)):
         if file.suffix == ".ftl":
             locale_files.append(str(file.absolute()))
-    l10n_loader = FluentResourceLoader(str(Path.joinpath(locales_dir, "{locale")))
+    l10n_loader = FluentResourceLoader(str(Path.joinpath(locales_dir, "{locale}")))
 
     return FluentLocalization([language], locale_files, l10n_loader)
