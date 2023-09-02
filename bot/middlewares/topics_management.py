@@ -1,13 +1,13 @@
-from textwrap import dedent
 from typing import Any, Awaitable, Callable, Dict
 from typing import NamedTuple
 
 import structlog
-from aiogram import BaseMiddleware, Bot
-from aiogram.enums import ContentType, MessageEntityType
+from aiogram import BaseMiddleware, Bot, html
+from aiogram.enums import ContentType, MessageEntityType, ParseMode
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import TelegramObject, Message, ForumTopic, User
 from cachetools import LRUCache
+from fluent.runtime import FluentLocalization
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.db import Topic
@@ -73,29 +73,43 @@ class TopicsManagementMiddleware(BaseMiddleware):
             ContentType.UNKNOWN
         }
 
-    def prepare_first_topic_message(self, user: User) -> str:
-        username = f"@{user.username}" if user.username else "no"
-        premium = "yes" if user.is_premium else "no"
-        language_code = user.language_code if user.language_code else "no"
+    @staticmethod
+    def prepare_first_topic_message(l10n: FluentLocalization, user: User) -> str:
+        # Objects for "no" and "yes" strings
+        no = l10n.format_value("no", {"capitalization": "lowercase"})
+        yes = l10n.format_value("yes", {"capitalization": "lowercase"})
 
-        text = f""" \
-        New user chat!
-        
-        {user.full_name}
-        ├── Telegram ID: {user.id}
-        ├── Username: {username}
-        ├── Language: {language_code}
-        └── Premium: {premium}
-        """
-        return dedent(text)
+        username = f"@{user.username}" if user.username else no
+        language_code = user.language_code if user.language_code else no
+        has_premium = yes if user.is_premium else no
 
-    async def create_new_topic(self, session: AsyncSession, bot: Bot, supergroup_id: int, message: Message):
+        text = l10n.format_value(
+            "new-topic-intro",
+            {
+                "name": html.quote(user.full_name),
+                "id": user.id,
+                "username": username,
+                "language_code": language_code,
+                "has_premium": has_premium
+            }
+        )
+        return text
+
+    async def create_new_topic(
+            self,
+            session: AsyncSession,
+            bot: Bot,
+            supergroup_id: int,
+            message: Message,
+            l10n: FluentLocalization
+    ):
         try:
             new_topic: ForumTopic = await bot.create_forum_topic(supergroup_id, message.from_user.full_name[:127])
             first_topic_message = await bot.send_message(
                 supergroup_id,
                 message_thread_id=new_topic.message_thread_id,
-                text=self.prepare_first_topic_message(message.from_user)
+                text=self.prepare_first_topic_message(l10n, message.from_user),
+                parse_mode=ParseMode.HTML
             )
         except TelegramBadRequest as ex:
             log.error(
@@ -173,11 +187,13 @@ class TopicsManagementMiddleware(BaseMiddleware):
                     first_message_id=topic_info.first_message_id
                 )
             else:
+                l10n = data["l10n"]
                 new_topic: NewTopicData = await self.create_new_topic(
                     session=session,
                     bot=data["bot"],
                     supergroup_id=data["forum_chat_id"],
-                    message=event
+                    message=event,
+                    l10n=l10n
                 )
                 data.update(
                     topic_id=new_topic.topic_id,

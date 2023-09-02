@@ -2,20 +2,23 @@ import structlog
 from aiogram import Router, F
 from aiogram.filters import MagicData, Command
 from aiogram.types import Message
+from fluent.runtime import FluentLocalization
+
 
 router = Router(name="Forum Router")
 log: structlog.BoundLogger = structlog.get_logger()
 
 
 @router.message(MagicData(F.user_id.is_(None)))
-async def no_user_id(message: Message):
+async def no_user_id(message: Message, l10n: FluentLocalization):
     """
     Handler to messages when no `user_id` is passed via middlewares.
     This basically means that our code could not find user_id to send message to.
 
     :param message: message from Telegram
+    :param l10n: FluentLocalization object
     """
-    await message.answer("Error: couldn't find corresponding user_id. Message cannot be delivered")
+    await message.answer(l10n.format_value("error-couldnt-deliver"))
 
 
 @router.message(Command(commands="note", prefix="!"))
