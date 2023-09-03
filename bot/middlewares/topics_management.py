@@ -174,6 +174,11 @@ class TopicsManagementMiddleware(BaseMiddleware):
 
         # If message comes from supergroup:
         if event.chat.id == data["forum_chat_id"]:
+            # If this topic id is in "ignored" list, well, ignore it!
+            ignored_topics = data["topics_to_ignore"]
+            if event.message_thread_id in ignored_topics:
+                return
+
             # If the message comes from forum supergroup, find relevant user id
             user_id: int | None = await self.find_user_by_topic(session, event.message_thread_id)
             data.update(user_id=user_id)
