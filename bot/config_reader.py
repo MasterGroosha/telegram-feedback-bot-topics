@@ -3,7 +3,7 @@ from os import getenv
 from pathlib import Path
 from typing import Optional
 
-from pydantic import SecretStr, BaseModel, RedisDsn, model_validator, PostgresDsn
+from pydantic import SecretStr, BaseModel, RedisDsn, model_validator, PostgresDsn, Field
 from yaml import load as yaml_load
 
 try:
@@ -28,7 +28,7 @@ class PostgresSettings(BaseModel):
 class BotSettings(BaseModel):
     token: SecretStr
     forum_supergroup_id: int
-    ignored_topics_ids: list[int] | None = None
+    ignored_topics_ids: set[int] = Field(default_factory=set)
     fsm_mode: FSMModeEnum
     language: str
 
