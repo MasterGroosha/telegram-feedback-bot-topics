@@ -172,32 +172,34 @@ class TopicsManagementMiddleware(BaseMiddleware):
 
         session: AsyncSession = data["session"]
 
+        # If message comes from supergroup:
         if event.chat.id == data["forum_chat_id"]:
             # If the message comes from forum supergroup, find relevant user id
             user_id: int | None = await self.find_user_by_topic(session, event.message_thread_id)
             data.update(user_id=user_id)
+            return await handler(event, data)
+
+        # If message comes from private chat:
+        if self.is_start_message(event):
+            return await handler(event, data)
+
+        topic_info: Topic | None = await self.find_topic_by_user(session, event.from_user.id)
+        if topic_info:
+            data.update(
+                topic_id=topic_info.topic_id,
+                first_message_id=topic_info.first_message_id
+            )
         else:
-            if self.is_start_message(event):
-                return await handler(event, data)
-
-            topic_info: Topic | None = await self.find_topic_by_user(session, event.from_user.id)
-            if topic_info:
-                data.update(
-                    topic_id=topic_info.topic_id,
-                    first_message_id=topic_info.first_message_id
-                )
-            else:
-                l10n = data["l10n"]
-                new_topic: NewTopicData = await self.create_new_topic(
-                    session=session,
-                    bot=data["bot"],
-                    supergroup_id=data["forum_chat_id"],
-                    message=event,
-                    l10n=l10n
-                )
-                data.update(
-                    topic_id=new_topic.topic_id,
-                    first_message_id=new_topic.first_message_id
-                )
-
+            l10n = data["l10n"]
+            new_topic: NewTopicData = await self.create_new_topic(
+                session=session,
+                bot=data["bot"],
+                supergroup_id=data["forum_chat_id"],
+                message=event,
+                l10n=l10n
+            )
+            data.update(
+                topic_id=new_topic.topic_id,
+                first_message_id=new_topic.first_message_id
+            )
         return await handler(event, data)
