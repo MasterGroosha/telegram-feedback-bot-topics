@@ -143,15 +143,6 @@ class TopicsManagementMiddleware(BaseMiddleware):
             first_message_id=first_topic_message.message_id
         )
 
-    @staticmethod
-    def is_start_message(message: Message):
-        if message.entities is None:
-            return False
-        if message.entities[0].type == MessageEntityType.BOT_COMMAND and \
-                message.entities[0].extract_from(message.text) == "/start":
-            return True
-        return False
-
     async def __call__(
             self,
             handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
@@ -182,10 +173,6 @@ class TopicsManagementMiddleware(BaseMiddleware):
             # If the message comes from forum supergroup, find relevant user id
             user_id: int | None = await self.find_user_by_topic(session, event.message_thread_id)
             data.update(user_id=user_id)
-            return await handler(event, data)
-
-        # If message comes from private chat:
-        if self.is_start_message(event):
             return await handler(event, data)
 
         topic_info: Topic | None = await self.find_topic_by_user(session, event.from_user.id)
