@@ -170,6 +170,9 @@ class TopicsManagementMiddleware(BaseMiddleware):
             if event.message_thread_id in ignored_topics:
                 return
 
+            # Set message direction in middleware data
+            data.update(direction="to_user")
+
             # If the message comes from forum supergroup, find relevant user id
             user_id: int | None = await self.find_user_by_topic(session, event.message_thread_id)
             data.update(user_id=user_id)
@@ -182,6 +185,9 @@ class TopicsManagementMiddleware(BaseMiddleware):
                 first_message_id=topic_info.first_message_id
             )
         else:
+            # Set message direction in middleware data
+            data.update(direction="to_forum")
+
             l10n = data["l10n"]
             new_topic: NewTopicData = await self.create_new_topic(
                 session=session,
