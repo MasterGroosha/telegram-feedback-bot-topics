@@ -175,7 +175,7 @@ class TopicsManagementMiddleware(BaseMiddleware):
 
             # If the message comes from forum supergroup, find relevant user id
             user_id: int | None = await self.find_user_by_topic(session, event.message_thread_id)
-            data.update(user_id=user_id)
+            data.update(destination=user_id)
             return await handler(event, data)
 
         topic_info: Topic | None = await self.find_topic_by_user(session, event.from_user.id)
@@ -196,8 +196,5 @@ class TopicsManagementMiddleware(BaseMiddleware):
                 message=event,
                 l10n=l10n
             )
-            data.update(
-                topic_id=new_topic.topic_id,
-                first_message_id=new_topic.first_message_id
-            )
+            data.update(destination=new_topic.topic_id)
         return await handler(event, data)
