@@ -102,7 +102,7 @@ class TopicsManagementMiddleware(BaseMiddleware):
             supergroup_id: int,
             message: Message,
             l10n: FluentLocalization
-    ):
+    ) -> NewTopicData | None:
         try:
             new_topic: ForumTopic = await bot.create_forum_topic(supergroup_id, message.from_user.full_name[:127])
             first_topic_message = await bot.send_message(
@@ -117,7 +117,7 @@ class TopicsManagementMiddleware(BaseMiddleware):
                 error_type=ex.__class__.__name__, message=ex.message,
                 method=ex.method.__class__.__name__, method_args=ex.method.dict()
             )
-            return NewTopicData(None, None)
+            return None
 
         db_topic: Topic = Topic(
             user_id=message.from_user.id,
@@ -134,7 +134,7 @@ class TopicsManagementMiddleware(BaseMiddleware):
                 topic_id=new_topic.message_thread_id,
                 user_id=message.from_user.id
             )
-            return NewTopicData(None, None)
+            return None
 
         log.debug("Created new topic with id %s", new_topic.message_thread_id)
         self.cache[message.from_user.id] = db_topic
@@ -189,12 +189,13 @@ class TopicsManagementMiddleware(BaseMiddleware):
             data.update(direction="to_forum")
 
             l10n = data["l10n"]
-            new_topic: NewTopicData = await self.create_new_topic(
+            new_topic: NewTopicData | None = await self.create_new_topic(
                 session=session,
                 bot=data["bot"],
                 supergroup_id=data["forum_chat_id"],
                 message=event,
                 l10n=l10n
             )
-            data.update(destination=new_topic.topic_id)
+            if new_topic is not None:
+                data.update(destination=new_topic.topic_id)
         return await handler(event, data)
