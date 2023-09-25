@@ -1,8 +1,9 @@
-from typing import Any, Awaitable, Callable, Dict, Optional
+from typing import Any, Awaitable, Callable, Dict
 
 import structlog
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject, Message
+
 from bot.db.requests import get_message_pair
 
 log: structlog.BoundLogger = structlog.get_logger()
@@ -30,9 +31,10 @@ class EditedMessagesMiddleware(BaseMiddleware):
             chat_id=event.chat.id,
             message_id=event.message_id
         )
-        data.update(
-            edit_chat_id=saved_message.to_chat_id,
-            edit_message_id=saved_message.to_message_id
-        )
+        if saved_message is not None:
+            data.update(
+                edit_chat_id=saved_message.to_chat_id,
+                edit_message_id=saved_message.to_message_id
+            )
 
         return await handler(event, data)
