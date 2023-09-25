@@ -2,7 +2,7 @@ import asyncio
 
 import structlog
 from aiogram import Bot, Dispatcher
-from aiogram.fsm.storage.memory import MemoryStorage, SimpleEventIsolation
+from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
@@ -40,7 +40,6 @@ async def main():
         forum_chat_id=config.bot.forum_supergroup_id,
         topics_to_ignore=config.bot.ignored_topics_ids,
         storage=storage,
-        events_isolation=SimpleEventIsolation(),
         l10n=l10n
     )
 
