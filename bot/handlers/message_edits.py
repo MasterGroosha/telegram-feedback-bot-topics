@@ -26,8 +26,16 @@ async def any_edited_message(
     if not edit_message_id:
         return
 
-    await bot.edit_message_text(
-        chat_id=edit_chat_id,
-        message_id=edit_message_id,
-        text=message.text
-    )
+    kwargs = {
+        "chat_id": edit_chat_id,
+        "message_id": edit_message_id
+    }
+
+    if message.text:
+        method = bot.edit_message_text
+        kwargs.update(text=message.text)
+    else:
+        method = bot.edit_message_caption
+        kwargs.update(caption=message.caption)
+
+    await method(**kwargs)
