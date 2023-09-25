@@ -47,7 +47,7 @@ async def main():
     dp.message.outer_middleware(DbSessionMiddleware(sessionmaker))
     dp.edited_message.outer_middleware(DbSessionMiddleware(sessionmaker))
 
-    talk_router = get_shared_router(config.bot)
+    talk_router = get_shared_router()
     talk_router.message.outer_middleware(TopicsManagementMiddleware())
     talk_router.message.middleware(MessageConnectionsMiddleware())
     talk_router.edited_message.middleware(EditedMessagesMiddleware())
