@@ -59,22 +59,21 @@ class MessageConnectionsMiddleware(BaseMiddleware):
                 else:
                     data["reply_to_id"] = replied_message.to_message_id
 
-        outgoing_messages: list[Message] | Message | None = await handler(event, data)
+        outgoing_messages: list[Message] | None = await handler(event, data)
         if not outgoing_messages:
             return
 
-        if isinstance(outgoing_messages, Message):
-            outgoing_messages = [outgoing_messages]
-
         messages_data = list()
+        from_id = event.message_id
         for item in outgoing_messages:
             messages_data.append({
                 "incoming": is_incoming_message,
                 "from_chat_id": event.chat.id,
-                "from_message_id": event.message_id,
+                "from_message_id": from_id,
                 "to_chat_id": item.chat.id,
                 "to_message_id": item.message_id
             })
+            from_id += 1
 
         # Writing data to database
         await add_messages_pairs(session, messages_data)
