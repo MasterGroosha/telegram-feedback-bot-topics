@@ -7,27 +7,14 @@ from cachetools import TTLCache
 
 
 class AlbumsMiddleware(BaseMiddleware):
-    def __init__(self):
+    def __init__(self, wait_time_seconds: int):
         super().__init__()
-        self.albums_cache = TTLCache(ttl=60.0, maxsize=1000)
-
-    async def delayed_albums_gathering(
-            self,
-            handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
-            first_event: Message,
-            data: Dict[str, Any],
-            waiting_time_seconds: int = 3,
-    ) -> Awaitable:
-        """
-        A task which tries to gather all album parts and pushes them to middleware data
-        :param handler: aiogram handler
-        :param first_event: first message of album
-        :param data: aiogram middleware data
-        :param waiting_time_seconds: how many seconds to wait until pushing data to handler
-        """
-        await asyncio.sleep(waiting_time_seconds)
-        data["album"] = self.albums_cache[first_event.media_group_id]
-        return await handler(first_event, data)
+        self.wait_time_seconds = wait_time_seconds
+        self.albums_cache = TTLCache(
+            ttl=float(wait_time_seconds) + 20.0,
+            maxsize=1000
+        )
+        self.lock = asyncio.Lock()
 
     async def __call__(
             self,
@@ -41,22 +28,35 @@ class AlbumsMiddleware(BaseMiddleware):
 
         event: Message
 
-        # If there is no media_group, just pass through
+        # If there is no media_group
+        # just pass update further
         if event.media_group_id is None:
             return await handler(event, data)
 
-        # If album cache already exists, add message to it
-        if event.media_group_id in self.albums_cache:
-            self.albums_cache[event.media_group_id].append(event)
+        album_id: str = event.media_group_id
 
-        # If no media_group_id in cache, initialize a new one
-        else:
-            self.albums_cache[event.media_group_id] = [event]
-            # Create delayed task to push the whole album to handler
-            asyncio.create_task(self.delayed_albums_gathering(
-                handler,
-                event,
-                data
-            ))
-        # Drop updates; they will be handled by task
-        return
+        async with self.lock:
+            self.albums_cache.setdefault(album_id, list())
+            self.albums_cache[album_id].append(event)
+
+        # Wait for some time until other updates are collected
+        await asyncio.sleep(self.wait_time_seconds)
+
+        # Find the smallest message_id in batch, this will be our only update
+        # which will pass to handlers
+        my_message_id = smallest_message_id = event.message_id
+
+        item: Message
+        for item in self.albums_cache[album_id]:
+            smallest_message_id = min(smallest_message_id, item.message_id)
+
+        # If current message_id in not the smallest, drop the update;
+        # it's already saved in self.albums_cache
+        if my_message_id != smallest_message_id:
+            return
+
+        # If current message_id is the smallest,
+        # add all other messages to data and pass to handler
+        data.update(album=self.albums_cache[album_id])
+
+        return await handler(event, data)
