@@ -9,7 +9,10 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from bot.config_reader import parse_settings, FSMModeEnum, Settings
 from bot.fluent_loader import get_fluent_localization
 from bot.handlers import get_shared_router
-from bot.middlewares import TopicsManagementMiddleware, MessageConnectionsMiddleware, EditedMessagesMiddleware, DbSessionMiddleware
+from bot.middlewares import (
+    TopicsManagementMiddleware, AlbumsMiddleware, MessageConnectionsMiddleware,
+    EditedMessagesMiddleware, DbSessionMiddleware
+)
 
 # from cachetools import LRUCache
 
@@ -49,6 +52,7 @@ async def main():
 
     talk_router = get_shared_router()
     talk_router.message.outer_middleware(TopicsManagementMiddleware())
+    talk_router.message.outer_middleware(AlbumsMiddleware(3))
     talk_router.message.middleware(MessageConnectionsMiddleware())
     talk_router.edited_message.middleware(EditedMessagesMiddleware())
 
