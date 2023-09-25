@@ -3,7 +3,7 @@ from typing import NamedTuple
 
 import structlog
 from aiogram import BaseMiddleware, Bot, html
-from aiogram.enums import ContentType, MessageEntityType, ParseMode
+from aiogram.enums import ContentType, ParseMode
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import TelegramObject, Message, ForumTopic, User
 from cachetools import LRUCache
@@ -170,24 +170,15 @@ class TopicsManagementMiddleware(BaseMiddleware):
             if event.message_thread_id in ignored_topics:
                 return
 
-            # Set message direction in middleware data
-            data.update(direction="to_user")
-
             # If the message comes from forum supergroup, find relevant user id
             user_id: int | None = await self.find_user_by_topic(session, event.message_thread_id)
-            data.update(destination=user_id)
+            data.update(user_id=user_id)
             return await handler(event, data)
 
         topic_info: Topic | None = await self.find_topic_by_user(session, event.from_user.id)
         if topic_info:
-            data.update(
-                topic_id=topic_info.topic_id,
-                first_message_id=topic_info.first_message_id
-            )
+            data.update(forum_topic_id=topic_info.topic_id)
         else:
-            # Set message direction in middleware data
-            data.update(direction="to_forum")
-
             l10n = data["l10n"]
             new_topic: NewTopicData | None = await self.create_new_topic(
                 session=session,
@@ -197,5 +188,7 @@ class TopicsManagementMiddleware(BaseMiddleware):
                 l10n=l10n
             )
             if new_topic is not None:
-                data.update(destination=new_topic.topic_id)
+                data.update(forum_topic_id=new_topic.topic_id)
+            else:
+                data.update(error="error-cannot-deliver-to-forum")
         return await handler(event, data)
