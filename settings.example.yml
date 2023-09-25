@@ -15,6 +15,9 @@ bot:
   # Chosen language of the bot
   # Actually it's the name of directory with locale files.
   language: "en"
+  # How much time to wait for the whole album delivered
+  # by Bot API (defaults to 5)
+  albums_wait_time_seconds: 5
 
 #### Redis-specific settings ####
 redis:
