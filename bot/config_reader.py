@@ -31,6 +31,7 @@ class BotSettings(BaseModel):
     ignored_topics_ids: set[int] = Field(default_factory=set)
     fsm_mode: FSMModeEnum
     language: str
+    albums_wait_time_seconds: int = 3.0
 
 
 class Settings(BaseModel):
