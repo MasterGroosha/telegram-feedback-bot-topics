@@ -7,7 +7,6 @@ from bot.middlewares import (
 )
 from . import actions_in_forum
 from . import actions_in_pm
-from . import message_edits
 from . import transfer_messages
 
 
@@ -35,7 +34,6 @@ def get_router(bot_config: BotSettings) -> Router:
     main_router.include_routers(
         actions_in_forum.router,
         actions_in_pm.router,
-        transfer_messages.router,
-        message_edits.router
+        transfer_messages.router
     )
     return main_router
