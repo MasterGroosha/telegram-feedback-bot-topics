@@ -2,7 +2,7 @@ import asyncio
 
 import structlog
 from aiogram import Bot, Dispatcher
-from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.fsm.storage.memory import MemoryStorage, SimpleEventIsolation
 from aiogram.fsm.storage.redis import RedisStorage
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
@@ -45,6 +45,8 @@ async def main():
         storage=storage,
         l10n=l10n
     )
+    if not config.bot.albums_preserve_enabled:
+        dp.fsm.events_isolation = SimpleEventIsolation()
 
     # Ensure that we always have PostgreSQL connection in middlewares
     dp.message.outer_middleware(DbSessionMiddleware(sessionmaker))
@@ -52,7 +54,8 @@ async def main():
 
     talk_router = get_shared_router()
     talk_router.message.outer_middleware(TopicsManagementMiddleware())
-    talk_router.message.outer_middleware(AlbumsMiddleware(3))
+    if config.bot.albums_preserve_enabled:
+        talk_router.message.outer_middleware(AlbumsMiddleware(config.bot.albums_wait_time_seconds))
     talk_router.message.middleware(MessageConnectionsMiddleware())
     talk_router.edited_message.middleware(EditedMessagesMiddleware())
 
