@@ -53,9 +53,9 @@ async def main():
     dp.edited_message.outer_middleware(DbSessionMiddleware(sessionmaker))
 
     talk_router = get_shared_router()
-    talk_router.message.outer_middleware(TopicsManagementMiddleware())
     if config.bot.albums_preserve_enabled:
         talk_router.message.outer_middleware(AlbumsMiddleware(config.bot.albums_wait_time_seconds))
+    talk_router.message.outer_middleware(TopicsManagementMiddleware())
     talk_router.message.middleware(MessageConnectionsMiddleware())
     talk_router.edited_message.middleware(EditedMessagesMiddleware())
 

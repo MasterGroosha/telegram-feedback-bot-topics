@@ -1,4 +1,3 @@
-import asyncio
 from typing import Any, Awaitable, Callable, Dict
 from typing import NamedTuple
 
@@ -25,7 +24,6 @@ class NewTopicData(NamedTuple):
 class TopicsManagementMiddleware(BaseMiddleware):
     def __init__(self):
         self.cache = LRUCache(maxsize=10)
-        self.lock = asyncio.Lock()
 
     async def find_topic_by_user(self, session: AsyncSession, user_id: int) -> Topic | None:
         # Search in cache // O(1)
@@ -177,21 +175,20 @@ class TopicsManagementMiddleware(BaseMiddleware):
             data.update(user_id=user_id)
             return await handler(event, data)
 
-        async with self.lock:
-            topic_info: Topic | None = await self.find_topic_by_user(session, event.from_user.id)
-            if topic_info:
-                data.update(forum_topic_id=topic_info.topic_id)
+        topic_info: Topic | None = await self.find_topic_by_user(session, event.from_user.id)
+        if topic_info:
+            data.update(forum_topic_id=topic_info.topic_id)
+        else:
+            l10n = data["l10n"]
+            new_topic: NewTopicData | None = await self.create_new_topic(
+                session=session,
+                bot=data["bot"],
+                supergroup_id=data["forum_chat_id"],
+                message=event,
+                l10n=l10n
+            )
+            if new_topic is not None:
+                data.update(forum_topic_id=new_topic.topic_id)
             else:
-                l10n = data["l10n"]
-                new_topic: NewTopicData | None = await self.create_new_topic(
-                    session=session,
-                    bot=data["bot"],
-                    supergroup_id=data["forum_chat_id"],
-                    message=event,
-                    l10n=l10n
-                )
-                if new_topic is not None:
-                    data.update(forum_topic_id=new_topic.topic_id)
-                else:
-                    data.update(error="error-cannot-deliver-to-forum")
+                data.update(error="error-cannot-deliver-to-forum")
         return await handler(event, data)
