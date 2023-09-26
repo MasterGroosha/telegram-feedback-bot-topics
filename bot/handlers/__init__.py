@@ -1,16 +1,19 @@
-from aiogram import Router
+from aiogram import F, Router
 
 from bot.config_reader import BotSettings
 from bot.middlewares import (
     AlbumsMiddleware, TopicsManagementMiddleware,
     MessageConnectionsMiddleware, EditedMessagesMiddleware
 )
+from . import actions_in_forum
 from . import message_edits
 from . import transfer_messages
 
 
 def get_router(bot_config: BotSettings) -> Router:
     main_router = Router(name="all_updates_router")
+
+    actions_in_forum.router.message.filter(F.chat.id == bot_config.forum_supergroup_id)
 
     if bot_config.albums_preserve_enabled:
         transfer_messages.router.message.outer_middleware(
@@ -28,6 +31,7 @@ def get_router(bot_config: BotSettings) -> Router:
 
     # Attach other routers to main router
     main_router.include_routers(
+        actions_in_forum.router,
         transfer_messages.router,
         message_edits.router
     )
