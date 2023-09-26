@@ -49,8 +49,7 @@ async def main():
         dp.fsm.events_isolation = SimpleEventIsolation()
 
     # Ensure that we always have PostgreSQL connection in middlewares
-    dp.message.outer_middleware(DbSessionMiddleware(sessionmaker))
-    dp.edited_message.outer_middleware(DbSessionMiddleware(sessionmaker))
+    dp.update.outer_middleware(DbSessionMiddleware(sessionmaker))
 
     talk_router = get_shared_router()
     if config.bot.albums_preserve_enabled:
