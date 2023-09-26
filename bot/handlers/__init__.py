@@ -1,20 +1,34 @@
-from aiogram import Router, F
+from aiogram import Router
 
-from . import from_forum
-from . import from_users
+from bot.config_reader import BotSettings
+from bot.middlewares import (
+    AlbumsMiddleware, TopicsManagementMiddleware,
+    MessageConnectionsMiddleware, EditedMessagesMiddleware
+)
 from . import message_edits
 from . import transfer_messages
-from bot.config_reader import BotSettings
 
 
-def get_shared_router() -> Router:
-    shared_router = Router(name="Shared Router")
+def get_router(bot_config: BotSettings) -> Router:
+    main_router = Router(name="all_updates_router")
 
-    # Attach routers to this router
-    shared_router.include_routers(
+    if bot_config.albums_preserve_enabled:
+        transfer_messages.router.message.outer_middleware(
+            AlbumsMiddleware(bot_config.albums_wait_time_seconds)
+        )
+    transfer_messages.router.message.outer_middleware(
+        TopicsManagementMiddleware()
+    )
+    transfer_messages.router.message.outer_middleware(
+        MessageConnectionsMiddleware()
+    )
+    transfer_messages.router.edited_message.outer_middleware(
+        EditedMessagesMiddleware()
+    )
+
+    # Attach other routers to main router
+    main_router.include_routers(
         transfer_messages.router,
-        # from_users.router,
-        # from_forum.router,
         message_edits.router
     )
-    return shared_router
+    return main_router

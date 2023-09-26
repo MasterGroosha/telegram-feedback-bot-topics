@@ -8,11 +8,8 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 from bot.config_reader import parse_settings, FSMModeEnum, Settings
 from bot.fluent_loader import get_fluent_localization
-from bot.handlers import get_shared_router
-from bot.middlewares import (
-    TopicsManagementMiddleware, AlbumsMiddleware, MessageConnectionsMiddleware,
-    EditedMessagesMiddleware, DbSessionMiddleware
-)
+from bot.handlers import get_router
+from bot.middlewares import DbSessionMiddleware
 
 # from cachetools import LRUCache
 
@@ -51,14 +48,8 @@ async def main():
     # Ensure that we always have PostgreSQL connection in middlewares
     dp.update.outer_middleware(DbSessionMiddleware(sessionmaker))
 
-    talk_router = get_shared_router()
-    if config.bot.albums_preserve_enabled:
-        talk_router.message.outer_middleware(AlbumsMiddleware(config.bot.albums_wait_time_seconds))
-    talk_router.message.outer_middleware(TopicsManagementMiddleware())
-    talk_router.message.middleware(MessageConnectionsMiddleware())
-    talk_router.edited_message.middleware(EditedMessagesMiddleware())
-
-    dp.include_router(talk_router)
+    main_router = get_router(config.bot)
+    dp.include_router(main_router)
 
     await logger.ainfo("Starting Bot")
     await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
