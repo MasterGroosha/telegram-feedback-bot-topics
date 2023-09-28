@@ -3,7 +3,7 @@ from typing import NamedTuple
 
 import structlog
 from aiogram import BaseMiddleware, Bot, html
-from aiogram.enums import ContentType, MessageEntityType, ParseMode
+from aiogram.enums import ContentType, ParseMode
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import TelegramObject, Message, ForumTopic, User
 from cachetools import LRUCache
@@ -102,7 +102,7 @@ class TopicsManagementMiddleware(BaseMiddleware):
             supergroup_id: int,
             message: Message,
             l10n: FluentLocalization
-    ):
+    ) -> NewTopicData | None:
         try:
             new_topic: ForumTopic = await bot.create_forum_topic(supergroup_id, message.from_user.full_name[:127])
             first_topic_message = await bot.send_message(
@@ -117,7 +117,7 @@ class TopicsManagementMiddleware(BaseMiddleware):
                 error_type=ex.__class__.__name__, message=ex.message,
                 method=ex.method.__class__.__name__, method_args=ex.method.dict()
             )
-            return NewTopicData(None, None)
+            return None
 
         db_topic: Topic = Topic(
             user_id=message.from_user.id,
@@ -134,7 +134,7 @@ class TopicsManagementMiddleware(BaseMiddleware):
                 topic_id=new_topic.message_thread_id,
                 user_id=message.from_user.id
             )
-            return NewTopicData(None, None)
+            return None
 
         log.debug("Created new topic with id %s", new_topic.message_thread_id)
         self.cache[message.from_user.id] = db_topic
@@ -142,15 +142,6 @@ class TopicsManagementMiddleware(BaseMiddleware):
             topic_id=new_topic.message_thread_id,
             first_message_id=first_topic_message.message_id
         )
-
-    @staticmethod
-    def is_start_message(message: Message):
-        if message.entities is None:
-            return False
-        if message.entities[0].type == MessageEntityType.BOT_COMMAND and \
-                message.entities[0].extract_from(message.text) == "/start":
-            return True
-        return False
 
     async def __call__(
             self,
@@ -184,27 +175,20 @@ class TopicsManagementMiddleware(BaseMiddleware):
             data.update(user_id=user_id)
             return await handler(event, data)
 
-        # If message comes from private chat:
-        if self.is_start_message(event):
-            return await handler(event, data)
-
         topic_info: Topic | None = await self.find_topic_by_user(session, event.from_user.id)
         if topic_info:
-            data.update(
-                topic_id=topic_info.topic_id,
-                first_message_id=topic_info.first_message_id
-            )
+            data.update(forum_topic_id=topic_info.topic_id)
         else:
             l10n = data["l10n"]
-            new_topic: NewTopicData = await self.create_new_topic(
+            new_topic: NewTopicData | None = await self.create_new_topic(
                 session=session,
                 bot=data["bot"],
                 supergroup_id=data["forum_chat_id"],
                 message=event,
                 l10n=l10n
             )
-            data.update(
-                topic_id=new_topic.topic_id,
-                first_message_id=new_topic.first_message_id
-            )
+            if new_topic is not None:
+                data.update(forum_topic_id=new_topic.topic_id)
+            else:
+                data.update(error="error-cannot-deliver-to-forum")
         return await handler(event, data)

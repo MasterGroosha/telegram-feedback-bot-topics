@@ -71,30 +71,23 @@ async def get_message_pair(
     return await session.scalar(statement)
 
 
-async def add_message_pair(
+async def add_messages_pairs(
         session: AsyncSession,
-        incoming: bool,
-        from_chat_id: int,
-        from_message_id: int,
-        to_chat_id: int,
-        to_message_id: int
+        messages_data: list[dict],
 ):
     """
     Создание новой записи о пары сообщений
 
-    :param session: сессия SQLAlchemy
-    :param incoming: если сообщение отправлено юзером в супергруппу-форум, то True. Иначе False
-    :param from_chat_id: айди чата, откуда отправлено сообщения
-    :param from_message_id: айди отправленного сообщения
-    :param to_chat_id: айди чата, куда пришла копия сообщения
-    :param to_message_id: айди сообщения-копии
+    :param session: SQLAlchemy session
+    :param messages_data: list of messages' properties
     """
-    new_message_data = Message(
-        incoming=incoming,
-        from_chat_id=from_chat_id,
-        from_message_id=from_message_id,
-        to_chat_id=to_chat_id,
-        to_message_id=to_message_id
-    )
-    session.add(new_message_data)
+    for item in messages_data:
+        new_message_data = Message(
+            incoming=item["incoming"],
+            from_chat_id=item["from_chat_id"],
+            from_message_id=item["from_message_id"],
+            to_chat_id=item["to_chat_id"],
+            to_message_id=item["to_message_id"]
+        )
+        session.add(new_message_data)
     await session.commit()

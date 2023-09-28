@@ -1,22 +1,39 @@
-from aiogram import Router, F
+from aiogram import F, Router
 
-from . import from_forum
-from . import from_users
-from . import message_edits
 from bot.config_reader import BotSettings
+from bot.middlewares import (
+    AlbumsMiddleware, TopicsManagementMiddleware,
+    MessageConnectionsMiddleware, EditedMessagesMiddleware
+)
+from . import actions_in_forum
+from . import actions_in_pm
+from . import transfer_messages
 
 
-def get_shared_router(bot_config: BotSettings) -> Router:
-    shared_router = Router(name="Shared Router")
+def get_router(bot_config: BotSettings) -> Router:
+    main_router = Router(name="all_updates_router")
 
-    # Add filters
-    from_users.router.message.filter(F.chat.type == "private")
-    from_forum.router.message.filter(F.chat.id == bot_config.forum_supergroup_id)
+    actions_in_forum.router.message.filter(F.chat.id == bot_config.forum_supergroup_id)
+    actions_in_pm.router.message.filter(F.chat.type == "private")
 
-    # Attach routers to this router
-    shared_router.include_routers(
-        from_users.router,
-        from_forum.router,
-        message_edits.router
+    if bot_config.albums_preserve_enabled:
+        transfer_messages.router.message.outer_middleware(
+            AlbumsMiddleware(bot_config.albums_wait_time_seconds)
+        )
+    transfer_messages.router.message.outer_middleware(
+        TopicsManagementMiddleware()
     )
-    return shared_router
+    transfer_messages.router.message.outer_middleware(
+        MessageConnectionsMiddleware()
+    )
+    transfer_messages.router.edited_message.outer_middleware(
+        EditedMessagesMiddleware()
+    )
+
+    # Attach other routers to main router
+    main_router.include_routers(
+        actions_in_forum.router,
+        actions_in_pm.router,
+        transfer_messages.router
+    )
+    return main_router

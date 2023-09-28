@@ -15,6 +15,15 @@ bot:
   # Chosen language of the bot
   # Actually it's the name of directory with locale files.
   language: "en"
+  # EXPERIMENTAL FEATURE:
+  # If enabled, tries to re-send media groups ("albums")
+  # the way they were originally sent.
+  # Causes a small delay. Defaults to false
+  albums_preserve_enabled: false
+  # How much time to wait for the whole album delivered
+  # by Bot API (defaults to 5)
+  # Ignored if "albums_preserve_enabled" is false
+  albums_wait_time_seconds: 5
 
 #### Redis-specific settings ####
 redis:

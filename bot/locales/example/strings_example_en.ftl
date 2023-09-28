@@ -25,3 +25,6 @@ new-topic-intro =
 
 error-couldnt-deliver =
     Error: couldn't find corresponding user_id. Message cannot be delivered.
+
+error-cannot-deliver-to-forum =
+    Error: couldn't deliver your message to bot owner. Try again in several minutes.
