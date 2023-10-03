@@ -52,6 +52,7 @@ async def main():
     dp.include_router(main_router)
 
     await logger.ainfo("Starting Bot")
+    await bot.delete_webhook()
     await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
 
 
