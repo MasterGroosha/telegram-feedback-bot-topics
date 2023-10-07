@@ -27,8 +27,13 @@ async def cmd_ban_or_shadowban(
         message: Message,
         command: CommandObject,
         session: AsyncSession,
-        l10n: FluentLocalization
+        l10n: FluentLocalization,
+        topics_to_ignore: set[int]
 ):
+    if message.message_thread_id in topics_to_ignore:
+        await message.answer(l10n.format_value("topic-ignored"))
+        return
+
     need_to_ban = (command.command == "ban")
     need_to_shadowban = not need_to_ban
 
