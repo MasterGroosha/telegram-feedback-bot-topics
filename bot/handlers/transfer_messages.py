@@ -79,7 +79,7 @@ async def any_album(
             message_thread_id=forum_topic_id
         )
     else:
-        error = "Neither forum topic not user_id are present!"
+        error = "Neither forum topic nor user_id are present!"
         raise ValueError(error)
 
     if album:
