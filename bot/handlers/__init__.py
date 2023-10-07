@@ -2,7 +2,8 @@ from aiogram import F, Router
 
 from bot.config_reader import BotSettings
 from bot.middlewares import (
-    AlbumsMiddleware, TopicsManagementMiddleware,
+    AlbumsMiddleware, BansMiddleware,
+    TopicsManagementMiddleware,
     MessageConnectionsMiddleware, EditedMessagesMiddleware
 )
 from . import actions_in_forum
@@ -15,6 +16,10 @@ def get_router(bot_config: BotSettings) -> Router:
 
     actions_in_forum.router.message.filter(F.chat.id == bot_config.forum_supergroup_id)
     actions_in_pm.router.message.filter(F.chat.type == "private")
+
+    transfer_messages.router.message.outer_middleware(
+        BansMiddleware()
+    )
 
     if bot_config.albums_preserve_enabled:
         transfer_messages.router.message.outer_middleware(
