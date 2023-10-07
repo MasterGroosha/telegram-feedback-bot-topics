@@ -44,3 +44,11 @@ class Topic(Base):
             "topic_id": self.topic_id,
             "first_message_id": self.first_message_id
         }
+
+
+class Ban(Base):
+    __tablename__ = "bans"
+
+    user_id: Mapped[int] = mapped_column(BIGINT, primary_key=True)
+    is_banned: Mapped[bool] = mapped_column(BOOLEAN, server_default="false")
+    is_shadowbanned: Mapped[bool] = mapped_column(BOOLEAN, server_default="false")

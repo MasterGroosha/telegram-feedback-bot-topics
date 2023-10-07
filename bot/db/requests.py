@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.db import Topic, Message
+from bot.db import Ban, Topic, Message
 
 
 async def find_topic_entry(
@@ -91,3 +91,31 @@ async def add_messages_pairs(
         )
         session.add(new_message_data)
     await session.commit()
+
+
+async def get_ban_status(
+        session: AsyncSession,
+        user_id: int
+) -> Ban | None:
+    statement = select(Ban).where(Ban.user_id == user_id)
+    return await session.scalar(statement)
+
+
+async def ban_user(
+        session: AsyncSession,
+        user_id: int,
+        is_shadowban: bool = False
+):
+    new_ban = Ban(
+        user_id=user_id
+    )
+    if is_shadowban:
+        new_ban.is_shadowbanned = True
+    else:
+        new_ban.is_banned = True
+    session.add(new_ban)
+    try:
+        await session.commit()
+    except Exception as ex:
+        # todo: log error
+        raise ex
