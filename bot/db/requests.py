@@ -101,19 +101,28 @@ async def get_ban_status(
     return await session.scalar(statement)
 
 
-async def ban_user(
+async def ban_or_shadowban(
         session: AsyncSession,
+        existing_object: Ban | None,
         user_id: int,
         is_shadowban: bool = False
 ):
-    new_ban = Ban(
-        user_id=user_id
-    )
+    # Choose attribute to update
     if is_shadowban:
-        new_ban.is_shadowbanned = True
+        attr = "is_shadowbanned"
     else:
-        new_ban.is_banned = True
-    session.add(new_ban)
+        attr = "is_banned"
+
+    # Update existing object if passed
+    if existing_object:
+        setattr(existing_object, attr, True)
+    else:
+        new_ban = Ban(
+            user_id=user_id
+        )
+        setattr(new_ban, attr, True)
+        session.add(new_ban)
+
     try:
         await session.commit()
     except Exception as ex:
