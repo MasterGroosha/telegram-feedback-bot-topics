@@ -30,25 +30,6 @@ async def find_topic_entry(
     return await session.scalar(statement)
 
 
-async def add_topic(
-        session: AsyncSession,
-        user_id: int,
-        topic_id: int,
-        first_message_id: int
-):
-    """
-    Добавление топика в БД
-
-    :param session: сессия SQLAlchemy
-    :param user_id: айди юзера в Telegram
-    :param topic_id: айди топика в Telegram
-    :param first_message_id: айди первого сообщения в созданном топике
-    """
-    new_topic = Topic(user_id=user_id, topic_id=topic_id, first_message_id=first_message_id)
-    session.add(new_topic)
-    await session.commit()
-
-
 async def get_message_pair(
         session: AsyncSession,
         is_from_bot: bool,
