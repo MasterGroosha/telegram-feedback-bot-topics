@@ -1,33 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.db import Ban, Topic, Message
-
-
-async def find_topic_entry(
-        session: AsyncSession,
-        *,
-        user_id: int = None,
-        topic_id: int = None
-) -> Topic | None:
-    """
-    Поиск топика по user_id или topic_id
-
-    :param session: сессия SQLAlchemy
-    :param user_id: [keyword-only] айди юзера в Telegram
-    :param topic_id: [keyword-only] айди топика в Telegram
-    :return: объект Topic или None, если топик не найден
-    """
-    if user_id is None and topic_id is None:
-        raise ValueError("You must specify either user_id or topic_id filter")
-    if user_id and topic_id:
-        raise ValueError("Exactly one filter is required")
-
-    if user_id is not None:
-        statement = select(Topic).where(Topic.user_id == user_id)
-    else:
-        statement = select(Topic).where(Topic.topic_id == topic_id)
-    return await session.scalar(statement)
+from bot.db import Ban, Message
 
 
 async def get_message_pair(

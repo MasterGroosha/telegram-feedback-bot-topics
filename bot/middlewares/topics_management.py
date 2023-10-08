@@ -8,6 +8,7 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import TelegramObject, Message, ForumTopic, User
 from cachetools import LRUCache
 from fluent.runtime import FluentLocalization
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.db import Topic
@@ -25,12 +26,38 @@ class TopicsManagementMiddleware(BaseMiddleware):
     def __init__(self):
         self.cache = LRUCache(maxsize=10)
 
+    @staticmethod
+    async def find_topic_entry(
+            session: AsyncSession,
+            *,
+            user_id: int = None,
+            topic_id: int = None
+    ) -> Topic | None:
+        """
+        Search for topic using user_id or topic_id
+
+        :param session: SQLAlchemy session
+        :param user_id: [keyword-only] Telegram User ID
+        :param topic_id: [keyword-only] Telegram Forum Topic ID
+        :return: None, if topic not found; Topic object otherwise
+        """
+        if user_id is None and topic_id is None:
+            raise ValueError("You must specify either user_id or topic_id filter")
+        if user_id and topic_id:
+            raise ValueError("Exactly one filter is required")
+
+        if user_id is not None:
+            statement = select(Topic).where(Topic.user_id == user_id)
+        else:
+            statement = select(Topic).where(Topic.topic_id == topic_id)
+        return await session.scalar(statement)
+
     async def find_topic_by_user(self, session: AsyncSession, user_id: int) -> Topic | None:
         # Search in cache // O(1)
         if user_id in self.cache:
             log.debug("User %s found in local cache", user_id)
             return self.cache[user_id]
-        user_topic_data: Topic | None = await find_topic_entry(session, user_id=user_id)
+        user_topic_data: Topic | None = await self.find_topic_entry(session, user_id=user_id)
         if user_topic_data:
             # Update cache
             self.cache[user_id] = user_topic_data
@@ -44,7 +71,7 @@ class TopicsManagementMiddleware(BaseMiddleware):
                 log.debug("Topic %s found in local cache", topic_id)
                 return key
         # Search in database
-        user_topic_data: Topic | None = await find_topic_entry(session, topic_id=topic_id)
+        user_topic_data: Topic | None = await self.find_topic_entry(session, topic_id=topic_id)
         if user_topic_data:
             # Update cache
             self.cache[user_topic_data.user_id] = user_topic_data
