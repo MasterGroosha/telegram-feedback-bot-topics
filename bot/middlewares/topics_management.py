@@ -41,11 +41,6 @@ class TopicsManagementMiddleware(BaseMiddleware):
         :param topic_id: [keyword-only] Telegram Forum Topic ID
         :return: None, if topic not found; Topic object otherwise
         """
-        if user_id is None and topic_id is None:
-            raise ValueError("You must specify either user_id or topic_id filter")
-        if user_id and topic_id:
-            raise ValueError("Exactly one filter is required")
-
         if user_id is not None:
             statement = select(Topic).where(Topic.user_id == user_id)
         else:
