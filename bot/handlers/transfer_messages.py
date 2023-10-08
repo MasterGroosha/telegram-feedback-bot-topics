@@ -4,6 +4,8 @@ from aiogram.filters import MagicData
 from aiogram.types import Message, InputMediaPhoto, InputMediaVideo, InputMediaAudio, InputMediaDocument
 from fluent.runtime import FluentLocalization
 
+from bot.topic_context import MessageDirection, TopicContext
+
 router = Router(name="copy_messages")
 log: structlog.BoundLogger = structlog.get_logger()
 
@@ -44,12 +46,11 @@ def make_new_album(messages: list[Message]) \
 
 
 @router.message()
-async def any_album(
+async def any_message(
         message: Message,
         bot: Bot,
+        context: TopicContext,
         forum_chat_id: int,
-        forum_topic_id: int | None = None,
-        user_id: int | None = None,
         reply_to_id: int | None = None,
         album: list[Message] | None = None
 ):
@@ -58,9 +59,8 @@ async def any_album(
 
     :param message: message from Telegram
     :param bot: bot object
+    :param context: topic, related to this handler
     :param forum_chat_id: forum supergroup's ID
-    :param forum_topic_id: if sending to forum, ID of topic
-    :param user_id: if sending to user, their ID
     :param reply_to_id: if not None, this message should be a reply in forum supergroup topic
     :param album: if original message was album (group of messages), they will be here
     :return: sent message(s) object(s) to save in DB later
@@ -71,16 +71,13 @@ async def any_album(
         "allow_sending_without_reply": True,
     }
 
-    if user_id is not None:
-        kwargs.update(chat_id=user_id)
-    elif forum_topic_id is not None:
+    if context.direction == MessageDirection.TO_USER:
+        kwargs.update(chat_id=context.topic.user_id)
+    else:
         kwargs.update(
             chat_id=forum_chat_id,
-            message_thread_id=forum_topic_id
+            message_thread_id=context.topic.topic_id
         )
-    else:
-        error = "Neither forum topic nor user_id are present!"
-        raise ValueError(error)
 
     if album:
         # Re-sort album parts to prevent disorder (apparently it happens!)
