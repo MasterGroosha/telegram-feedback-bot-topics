@@ -5,6 +5,8 @@ from aiogram import BaseMiddleware
 from aiogram.types import Message, TelegramObject
 from cachetools import TTLCache
 
+from bot.user_topic_context import UserTopicContext
+
 
 class AlbumsMiddleware(BaseMiddleware):
     def __init__(self, wait_time_seconds: int):
@@ -57,6 +59,7 @@ class AlbumsMiddleware(BaseMiddleware):
 
         # If current message_id is the smallest,
         # add all other messages to data and pass to handler
-        data.update(album=self.albums_cache[album_id])
+        context: UserTopicContext = data["context"]
+        context.album = self.albums_cache[album_id]
 
         return await handler(event, data)

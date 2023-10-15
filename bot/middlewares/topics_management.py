@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.db import Topic
-from bot.topic_context import MessageDirection, TopicContext
+from bot.user_topic_context import UserTopicContext
 
 log: structlog.BoundLogger = structlog.get_logger()
 
@@ -52,29 +52,6 @@ class TopicsManagementMiddleware(BaseMiddleware):
             self.cache[entry.user_id] = entry
         return entry
 
-    @staticmethod
-    def is_service_message(message: Message) -> bool:
-        return message.content_type in {
-            ContentType.NEW_CHAT_MEMBERS, ContentType.LEFT_CHAT_MEMBER,
-            ContentType.NEW_CHAT_TITLE,
-            ContentType.NEW_CHAT_PHOTO, ContentType.DELETE_CHAT_PHOTO,
-            ContentType.GROUP_CHAT_CREATED, ContentType.SUPERGROUP_CHAT_CREATED, ContentType.CHANNEL_CHAT_CREATED,
-            ContentType.MESSAGE_AUTO_DELETE_TIMER_CHANGED,
-            ContentType.MIGRATE_TO_CHAT_ID, ContentType.MIGRATE_FROM_CHAT_ID,
-            ContentType.PINNED_MESSAGE,
-            ContentType.SUCCESSFUL_PAYMENT,
-            ContentType.USER_SHARED, ContentType.CHAT_SHARED,
-            ContentType.WRITE_ACCESS_ALLOWED,
-            ContentType.PROXIMITY_ALERT_TRIGGERED,
-            ContentType.FORUM_TOPIC_CREATED, ContentType.FORUM_TOPIC_EDITED,
-            ContentType.FORUM_TOPIC_CLOSED, ContentType.FORUM_TOPIC_REOPENED,
-            ContentType.GENERAL_FORUM_TOPIC_HIDDEN, ContentType.GENERAL_FORUM_TOPIC_UNHIDDEN,
-            ContentType.VIDEO_CHAT_SCHEDULED, ContentType.VIDEO_CHAT_STARTED,
-            ContentType.VIDEO_CHAT_ENDED, ContentType.VIDEO_CHAT_PARTICIPANTS_INVITED,
-            ContentType.WEB_APP_DATA,
-            ContentType.UNKNOWN
-        }
-
     async def create_new_topic(
             self,
             session: AsyncSession,
@@ -88,7 +65,7 @@ class TopicsManagementMiddleware(BaseMiddleware):
             first_topic_message = await bot.send_message(
                 supergroup_id,
                 message_thread_id=new_topic.message_thread_id,
-                text=TopicContext.make_first_topic_message(l10n, message.from_user),
+                text=UserTopicContext.make_first_topic_message(l10n, message.from_user),
                 parse_mode=ParseMode.HTML
             )
         except TelegramBadRequest as ex:
@@ -133,12 +110,7 @@ class TopicsManagementMiddleware(BaseMiddleware):
             return await handler(event, data)
 
         event: Message
-
-        # Ignore "service messages" and other irrelevant content types
-        if self.is_service_message(event):
-            return
-
-        session: AsyncSession = data["session"]
+        context: UserTopicContext = data["context"]
 
         # If message comes from supergroup:
         if event.chat.id == data["forum_chat_id"]:
@@ -148,49 +120,33 @@ class TopicsManagementMiddleware(BaseMiddleware):
 
             # If the message comes from forum supergroup, find relevant user id
             topic: Topic | None = await self.find_topic(
-                session,
+                context.session,
                 topic_id=event.message_thread_id
             )
+            if topic is not None:
+                context.topic_entry = topic
+            else:
+                data.update(error="error-cannot-find-user")
 
-            context = TopicContext(
-                direction=MessageDirection.TO_USER,
-                session=session,
-                topic=topic
-                # user = None
-            )
-
-            data.update(context=context)
         # If message comes from user:
         else:
             topic: Topic | None = await self.find_topic(
-                session,
+                context.session,
                 user_id=event.from_user.id
             )
             if topic:
-                context = TopicContext(
-                    direction=MessageDirection.TO_FORUM,
-                    session=session,
-                    topic=topic,
-                    user=event.from_user
-                )
-                data.update(context=context)
+                context.topic_entry = topic
             else:
                 l10n = data["l10n"]
                 new_topic: Topic | None = await self.create_new_topic(
-                    session=session,
+                    session=context.session,
                     bot=data["bot"],
                     supergroup_id=data["forum_chat_id"],
                     message=event,
                     l10n=l10n
                 )
                 if new_topic is not None:
-                    context = TopicContext(
-                        direction=MessageDirection.TO_FORUM,
-                        session=session,
-                        topic=new_topic,
-                        user=event.from_user
-                    )
-                    data.update(context=context)
+                    context.topic_entry = new_topic
                 else:
                     data.update(error="error-cannot-deliver-to-forum")
 

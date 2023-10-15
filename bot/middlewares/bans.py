@@ -3,9 +3,8 @@ from typing import Callable, Awaitable, Dict, Any
 import structlog
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject, Message
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.db.requests import get_ban_status
+from bot.user_topic_context import UserTopicContext
 
 logger: structlog.BoundLogger = structlog.get_logger()
 
@@ -17,20 +16,25 @@ class BansMiddleware(BaseMiddleware):
             event: TelegramObject,
             data: Dict[str, Any],
     ) -> Any:
+        await logger.adebug("Called BansMiddleware")
         # If someone accidentally tried to add this middleware
         # to anything but messages, just ignore it
         if not isinstance(event, Message):
             await logger.awarn("%s used not for Message, but for %s", self.__class__.__name__, type(event))
             return await handler(event, data)
 
+        context: UserTopicContext = data["context"]
+
         # If message comes from forum, skip middleware
-        forum_chat_id = data["forum_chat_id"]
-        if event.chat.id == forum_chat_id:
+        if event.chat.id == data["forum_chat_id"]:
+            # Just fetch possible ban entry and save it to context
+            await context.get_ban_entry(context.topic_entry.user_id)
             return await handler(event, data)
 
-        session: AsyncSession = data["session"]
+        # If message comes from private chat with user:
+
         # Check if user is (shadow)banned
-        ban_entry = await get_ban_status(session, event.from_user.id)
+        ban_entry = await context.get_ban_entry(context.caller.id)
 
         # If user is not banned, skip this middleware
         if ban_entry is None:

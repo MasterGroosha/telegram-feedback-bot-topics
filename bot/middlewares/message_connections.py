@@ -3,11 +3,10 @@ from typing import Any, Awaitable, Callable, Dict
 import structlog
 from aiogram import BaseMiddleware, Bot
 from aiogram.types import TelegramObject, Message
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.db.requests import get_message_pair, add_messages_pairs
+from bot.user_topic_context import UserTopicContext
 
-log: structlog.BoundLogger = structlog.get_logger()
+logger: structlog.BoundLogger = structlog.get_logger()
 
 
 class MessageConnectionsMiddleware(BaseMiddleware):
@@ -17,10 +16,11 @@ class MessageConnectionsMiddleware(BaseMiddleware):
             event: TelegramObject,
             data: Dict[str, Any],
     ) -> Any:
+        await logger.adebug("Called MessageConnectionsMiddleware")
         # If someone accidentally tried to add this middleware
         # to anything but messages, just ignore it
         if not isinstance(event, Message):
-            log.warn("%s used not for Message, but for %s", self.__class__.__name__, type(event))
+            await logger.awarn("%s used not for Message, but for %s", self.__class__.__name__, type(event))
             return await handler(event, data)
 
         event: Message
@@ -30,6 +30,7 @@ class MessageConnectionsMiddleware(BaseMiddleware):
 
         # Flag. which states, whether message coming TO forum or FROM forum
         is_incoming_message: bool = (event.chat.id != data["forum_chat_id"])
+        await logger.adebug("is_incoming_message", value=is_incoming_message)
 
         """
         If message itself is reply, the following logic is applied:
@@ -42,22 +43,23 @@ class MessageConnectionsMiddleware(BaseMiddleware):
             This, we use this replied message's id as "FROM:"
         3. Pass the other message ID to handlers
         """
-        session: AsyncSession = data["session"]
+
+        context: UserTopicContext = data["context"]
 
         if event.reply_to_message and not event.reply_to_message.forum_topic_created:
             bot: Bot = data["bot"]
             is_from_bot: bool = event.reply_to_message.from_user.id == bot.id
-            replied_message = await get_message_pair(
-                session=session,
+            replied_message = await context.get_message_pair(
                 is_from_bot=is_from_bot,
                 chat_id=event.reply_to_message.chat.id,
                 message_id=event.reply_to_message.message_id
             )
+            await logger.adebug("Is replied message found?", result=bool(replied_message))
             if replied_message is not None:
                 if is_from_bot:
-                    data["reply_to_id"] = replied_message.from_message_id
+                    context.reply_to_id = replied_message.from_message_id
                 else:
-                    data["reply_to_id"] = replied_message.to_message_id
+                    context.reply_to_id = replied_message.to_message_id
 
         outgoing_messages: list[Message] | None = await handler(event, data)
         if not outgoing_messages:
@@ -76,4 +78,4 @@ class MessageConnectionsMiddleware(BaseMiddleware):
             from_id += 1
 
         # Writing data to database
-        await add_messages_pairs(session, messages_data)
+        await context.add_messages_pairs(messages_data)
