@@ -8,8 +8,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 from bot.config_reader import parse_settings, FSMModeEnum, Settings
 from bot.fluent_loader import get_fluent_localization
-from bot.handlers import get_router
-from bot.middlewares import DbSessionMiddleware
+from bot.handlers import attach_routers_and_middlewares
 
 # from cachetools import LRUCache
 
@@ -45,11 +44,11 @@ async def main():
     if not config.bot.albums_preserve_enabled:
         dp.fsm.events_isolation = SimpleEventIsolation()
 
-    # Ensure that we always have PostgreSQL connection in middlewares
-    dp.update.outer_middleware(DbSessionMiddleware(sessionmaker))
-
-    main_router = get_router(config.bot)
-    dp.include_router(main_router)
+    attach_routers_and_middlewares(
+        dispatcher=dp,
+        bot_config=config.bot,
+        sessionmaker=sessionmaker
+    )
 
     await logger.ainfo("Starting Bot")
     await bot.delete_webhook()

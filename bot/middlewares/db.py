@@ -1,8 +1,13 @@
 from typing import Callable, Awaitable, Dict, Any
 
+import structlog
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
+
+from bot.user_topic_context import UserTopicContext
+
+logger: structlog.BoundLogger = structlog.get_logger()
 
 
 class DbSessionMiddleware(BaseMiddleware):
@@ -18,5 +23,11 @@ class DbSessionMiddleware(BaseMiddleware):
     ) -> Any:
         session: AsyncSession
         async with self.session_pool() as session:
-            data["session"] = session
+            context: UserTopicContext = data["context"]
+            context.session = session
+
+            await logger.adebug(
+                event="Added session to context"
+            )
+
             return await handler(event, data)

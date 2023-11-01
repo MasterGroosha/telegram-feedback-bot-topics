@@ -4,9 +4,9 @@ import structlog
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject, Message
 
-from bot.db.requests import get_message_pair
+from bot.user_topic_context import UserTopicContext
 
-log: structlog.BoundLogger = structlog.get_logger()
+logger: structlog.BoundLogger = structlog.get_logger()
 
 
 class EditedMessagesMiddleware(BaseMiddleware):
@@ -16,25 +16,26 @@ class EditedMessagesMiddleware(BaseMiddleware):
             event: TelegramObject,
             data: Dict[str, Any],
     ) -> Any:
+        await logger.adebug("Called EditedMessagesMiddleware")
         # If someone accidentally tried to add this middleware
         # to anything but messages, just ignore it
         if not isinstance(event, Message):
-            log.warn("%s used not for Message, but for %s", self.__class__.__name__, type(event))
+            await logger.awarn("%s used not for Message, but for %s", self.__class__.__name__, type(event))
             return await handler(event, data)
 
         event: Message
-        session = data["session"]
+        context: UserTopicContext = data["context"]
 
-        saved_message = await get_message_pair(
-            session=session,
+        saved_message = await context.get_message_pair(
             is_from_bot=False,
             chat_id=event.chat.id,
             message_id=event.message_id
         )
+        await logger.adebug(
+            event="Attempted to get message pair for edited message",
+            result=bool(saved_message)
+        )
         if saved_message is not None:
-            data.update(
-                edit_chat_id=saved_message.to_chat_id,
-                edit_message_id=saved_message.to_message_id
-            )
-
+            context.edit_chat_id = saved_message.to_chat_id
+            context.edit_message_id = saved_message.to_message_id
         return await handler(event, data)
