@@ -28,9 +28,10 @@ bot:
 #### Redis-specific settings ####
 redis:
   # Connection string for your Redis Database
-  dsn: redis://redis_host/1
+  dsn: redis://telegram-feedback-bot-topics-redis-1/1
 
 #### PostgreSQL-specific settings ####
 postgres:
   # Connection string for your PostgreSQL Database
-  dsn: postgresql+psycopg://bot:password@db_host/telegram
+  dsn: postgresql+psycopg://bot:password@telegram-feedback-bot-topics-postgres-1/telegram
+

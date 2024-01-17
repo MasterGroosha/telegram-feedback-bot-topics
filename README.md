@@ -26,3 +26,13 @@ Fill new user and database data in [init-user-db.sh](postgres-firstrun/init-user
 
 Use `settings.yml` (based on [settings.example.yml](settings.example.yml)) to fill the necessary options, place your localization 
 files (see relevant [README](bot/locales/example/README.md)), then run this bot. Docker images will follow soon.
+
+```ini
+cp settings.example.yml settings.yml
+docker compose up -d --build
+docker exec -it support-bot-topic bash
+alembic upgrade head
+mkdir bot/locales/en && cp bot/locales/example/strings_example_en.ftl bot/locales/en/strings_example_en.ftl
+python -m bot
+```
+
