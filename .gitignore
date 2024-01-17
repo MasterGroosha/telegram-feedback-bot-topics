@@ -1,6 +1,7 @@
 /venv/
 .idea/
-/docker-compose.yml
 /redis-data/
 /settings.yml
 *.ftl
+__pycache__/
+postgres-data

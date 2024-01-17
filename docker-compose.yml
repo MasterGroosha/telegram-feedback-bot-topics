@@ -11,6 +11,18 @@ services:
     volumes:
       - "./postgres-data:/var/lib/postgresql/data"
       - "./postgres-firstrun/init-user-db.sh:/docker-entrypoint-initdb.d/init-user-db.sh:ro"
+    networks:
+      - suppot
+    ports:
+      - "5432:5432"
+  bot:
+    container_name: support-bot-topic
+    restart: unless-stopped
+    build: .
+    volumes:
+      - ./:/app
+    networks:
+      - suppot
 
   redis:
     image: redis:7
@@ -23,3 +35,10 @@ services:
       retries: 50
     restart: "always"
     command: 'redis-server --save 60 1 --loglevel warning'
+    networks:
+      - suppot
+
+networks:
+  suppot:
+    driver: bridge
+
