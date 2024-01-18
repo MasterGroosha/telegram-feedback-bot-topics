@@ -3,4 +3,5 @@
 /docker-compose.yml
 /redis-data/
 /settings.yml
+/settings.prod.yml
 *.ftl

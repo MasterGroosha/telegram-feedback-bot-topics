@@ -2,11 +2,13 @@
 
 > 🇷🇺 README на русском доступен [здесь](README.ru.md)
 
-⚠️ **Warning**: project is still under development, use with caution. 
-[Issues](https://github.com/MasterGroosha/telegram-feedback-bot-topics/issues) are greatly appreciated!
+⚠️ **Warning**: project is still under development, use with caution.
+[Issues](https://github.com/MasterGroosha/telegram-feedback-bot-topics/issues) are
+greatly appreciated!
 
-A simple Telegram bot which uses [Telegram Forums](https://telegram.org/evolution#october-2022) feature to 
-separate different users to different topics. This bot is the result of evolution of my 
+A simple Telegram bot which
+uses [Telegram Forums](https://telegram.org/evolution#october-2022) feature to
+separate different users to different topics. This bot is the result of evolution of my
 [simple stateless feedback bot](https://github.com/MasterGroosha/telegram-feedback-bot).
 
 ## Used technology
@@ -17,12 +19,34 @@ separate different users to different topics. This bot is the result of evolutio
 * aiogram 3.x
 * SQLAlchemy 2.x
 * psycopg3 (aka psycopg)  
-and more...
+  and more...
 
-## Run
+## Prepare to Run
 
-You can use [docker-compose.example.yml](docker-compose.example.yml) file to deploy PostgreSQL and Redis locally. 
-Fill new user and database data in [init-user-db.sh](postgres-firstrun/init-user-db.sh) file or do it manually.
+- install docker.
+- place your localization files (see relevant [README](bot/locales/example/README.md))
 
-Use `settings.yml` (based on [settings.example.yml](settings.example.yml)) to fill the necessary options, place your localization 
-files (see relevant [README](bot/locales/example/README.md)), then run this bot. Docker images will follow soon.
+## Run locally
+
+- create virtual environment `python -m venv venv`
+- install dependencies `pip install -r requirements.txt`
+- change postgres user and password in `compose.local.yml`
+- fill `settings.yml` (copy from [settings.yml.example](settings.yml.example))
+- start docker containers with redis and
+  postgres `docker compose -f compose.local.yml up -d`
+- (first run) apply migrations to DB `alembic upgrade head`
+- start application `python -m bot`
+
+## Run application in docker fully
+
+- change postgres user and password in `compose.yml`
+- fill `settings.prod.yml` (copy
+  from [settings.prod.yml.example](settings.prod.yml.example))
+- start docker compose `docker compose up -d`
+- (first run) apply migrations to DB `docker compose exec tg_bot alembic upgrade head`
+
+P.S.
+If you get error `Could not create new topic     error_type=TelegramBadRequest
+message=Bad Request: not enough rights to create a topic method=CreateForumTopic` -
+Your bot must be an administrator (has permissions to create topics) in your's telegram
+group.
