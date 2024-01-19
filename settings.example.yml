@@ -28,9 +28,9 @@ bot:
 #### Redis-specific settings ####
 redis:
   # Connection string for your Redis Database
-  dsn: redis://172.25.0.12/1
+  dsn: redis://localhost/1
 
 #### PostgreSQL-specific settings ####
 postgres:
   # Connection string for your PostgreSQL Database
-  dsn: postgresql+psycopg://superuser:superpassword@172.25.0.11/telegram
+  dsn: postgresql+psycopg://superuser:superpassword@localhost/telegram
