@@ -14,7 +14,7 @@ bot:
     - 6
   # Chosen language of the bot
   # Actually it's the name of directory with locale files.
-  language: "ru"
+  language: "en"
   # EXPERIMENTAL FEATURE:
   # If enabled, tries to re-send media groups ("albums")
   # the way they were originally sent.
@@ -28,9 +28,9 @@ bot:
 #### Redis-specific settings ####
 redis:
   # Connection string for your Redis Database
-  dsn: redis://localhost/1
+  dsn: redis://redis_host/1
 
 #### PostgreSQL-specific settings ####
 postgres:
   # Connection string for your PostgreSQL Database
-  dsn: postgresql+psycopg://superuser:superpassword@localhost/telegram
+  dsn: postgresql+psycopg://bot:password@db_host/telegram

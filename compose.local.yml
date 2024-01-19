@@ -1,8 +1,7 @@
-version: '3.1'
-
 services:
   postgres:
     image: postgres:15-alpine
+    network_mode: host
     restart: "always"
     environment:
       # Superuser username/password
@@ -14,10 +13,11 @@ services:
 
   redis:
     image: redis:7
+    network_mode: host
     volumes:
       - "./redis-data:/data"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 30s
       retries: 50
