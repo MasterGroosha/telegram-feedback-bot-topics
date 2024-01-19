@@ -32,7 +32,7 @@
 - создайте виртуальное окружение `python -m venv venv`
 - установите зависимости `pip install -r requirements.txt`
 - в файле `compose.local.yml` укажите пользователя и пароль для postgres
-- в файле `settings.yml` (основан на [settings.yml.example](settings.yml.example))
+- в файле `settings.yml` (основан на [settings.example.yml](settings.example.yml))
   укажите настройки (обязательно 'token' и 'forum_supergroup_id')
 - запустите docker контейнеры `docker compose -f compose.local.yml up -d`
 - (при первом запуске) выполните миграции `alembic upgrade head`
@@ -42,7 +42,7 @@
 
 - в файле `compose.yml` укажите пользователя и пароль для postgres
 - в файле `settings.prod.yml` (основан
-  на [settings.prod.yml.example](settings.prod.yml.example))
+  на [settings.prod.example.yml](settings.prod.example.yml))
   укажите настройки (обязательно 'token' и 'forum_supergroup_id')
 - запустите docker контейнеры `docker compose up -d`
 - (при первом запуске) выполните

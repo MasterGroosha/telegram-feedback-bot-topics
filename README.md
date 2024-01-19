@@ -31,7 +31,7 @@ separate different users to different topics. This bot is the result of evolutio
 - create virtual environment `python -m venv venv`
 - install dependencies `pip install -r requirements.txt`
 - change postgres user and password in `compose.local.yml`
-- fill `settings.yml` (copy from [settings.yml.example](settings.yml.example))
+- fill `settings.yml` (copy from [settings.example.yml](settings.example.yml))
 - start docker containers with redis and
   postgres `docker compose -f compose.local.yml up -d`
 - (first run) apply migrations to DB `alembic upgrade head`
@@ -41,7 +41,7 @@ separate different users to different topics. This bot is the result of evolutio
 
 - change postgres user and password in `compose.yml`
 - fill `settings.prod.yml` (copy
-  from [settings.prod.yml.example](settings.prod.yml.example))
+  from [settings.prod.example.yml](settings.prod.example.yml))
 - start docker compose `docker compose up -d`
 - (first run) apply migrations to DB `docker compose exec tg_bot alembic upgrade head`
 
