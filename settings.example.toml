@@ -1,0 +1,4 @@
+#### Bot-specific settings ####
+[bot]
+  # Bot's token. Obtain from https://t.me/BotFather
+token = "1234567890:AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTt"
