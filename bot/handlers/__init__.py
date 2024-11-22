@@ -1,10 +1,32 @@
-from aiogram import Router
+from aiogram import F, Router
+from aiogram.enums import ChatType
 
-from . import start
+from . import (
+    pm_commands, pm_talk,
+    group_commands,
+)
+
+from bot.middlewares import TopicFinderUserToGroup
 
 
-def get_routers() -> list[Router]:
+def get_routers(
+        supergroup_id: int,
+) -> list[Router]:
+    pm_router = Router()
+    pm_router.message.filter(F.chat.type == ChatType.PRIVATE)
+    pm_router.include_routers(
+        pm_commands.router,
+        pm_talk.router
+    )
+    pm_talk.router.message.middleware(TopicFinderUserToGroup())
+
+    group_router = Router()
+    group_router.message.filter(F.chat.id == supergroup_id)
+    group_router.include_router(group_commands.router)
+
+
     return [
-        start.router
+        pm_router,
+        group_router,
     ]
 

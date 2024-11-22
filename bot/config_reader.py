@@ -4,7 +4,7 @@ from os import getenv
 from tomllib import load
 from typing import Type, TypeVar
 
-from pydantic import BaseModel, SecretStr, field_validator
+from pydantic import BaseModel, SecretStr, field_validator, PostgresDsn
 
 ConfigType = TypeVar("ConfigType", bound=BaseModel)
 
@@ -16,6 +16,7 @@ class LogRenderer(StrEnum):
 
 class BotConfig(BaseModel):
     token: SecretStr
+    supergroup_id: int
 
 
 class LogConfig(BaseModel):
@@ -31,9 +32,9 @@ class LogConfig(BaseModel):
     def log_renderer_to_lower(cls, v: str):
         return v.lower()
 
-
-class Config(BaseModel):
-    bot: BotConfig
+class DbConfig(BaseModel):
+    dsn: PostgresDsn
+    echo: bool
 
 
 @lru_cache

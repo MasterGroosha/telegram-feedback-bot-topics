@@ -5,5 +5,5 @@ router = Router()
 
 
 @router.message(F.text)
-async def cmd_start(message: Message):
-    await message.answer("Hello world")
+async def any_text_message(message: Message):
+    await message.answer("Any text message in PM")
