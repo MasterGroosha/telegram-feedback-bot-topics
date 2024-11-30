@@ -45,7 +45,10 @@ def get_processors(log_config: LogConfig) -> list:
     processors.append(structlog.processors.add_log_level)
 
     if log_config.renderer == LogRenderer.JSON:
-        processors.append(structlog.processors.JSONRenderer(serializer=custom_json_serializer))
+        processors.extend([
+            structlog.processors.dict_tracebacks,
+            structlog.processors.JSONRenderer(serializer=custom_json_serializer),
+        ])
     else:
         processors.append(structlog.dev.ConsoleRenderer(
             colors=log_config.use_colors_in_console,
