@@ -18,7 +18,7 @@ def get_routers(
         pm_commands.router,
         pm_talk.router
     )
-    pm_talk.router.message.middleware(TopicFinderUserToGroup())
+    pm_talk.router.message.middleware(TopicFinderUserToGroup(forum_chat_id=supergroup_id))
 
     group_router = Router()
     group_router.message.filter(F.chat.id == supergroup_id)

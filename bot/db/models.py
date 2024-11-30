@@ -41,3 +41,6 @@ class Topic(Base):
     @classmethod
     def find_by_user_id(cls, user_id: int):
         return select(cls).where(Topic.user_id == user_id)
+
+    def __repr__(self):
+        return f"Topic #{self.topic_id} for user {self.user_id}"
