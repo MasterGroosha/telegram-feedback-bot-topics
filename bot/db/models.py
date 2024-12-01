@@ -59,5 +59,9 @@ class Topic(Base):
     def find_by_user_id(cls, user_id: int):
         return select(cls).where(Topic.user_id == user_id)
 
+    @classmethod
+    def find_by_topic_id(cls, topic_id: int):
+        return select(cls).where(Topic.topic_id == topic_id)
+
     def __repr__(self):
         return f"Topic #{self.topic_id} for user {self.user_id}"

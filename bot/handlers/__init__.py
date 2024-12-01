@@ -3,10 +3,10 @@ from aiogram.enums import ChatType
 
 from . import (
     pm_commands, pm_talk,
-    group_commands,
+    group_commands, group_talk
 )
 
-from bot.middlewares import TopicFinderUserToGroup
+from bot.middlewares import TopicFinderUserToGroup, GroupToUserMiddleware
 
 
 def get_routers(
@@ -22,7 +22,11 @@ def get_routers(
 
     group_router = Router()
     group_router.message.filter(F.chat.id == supergroup_id)
-    group_router.include_router(group_commands.router)
+    group_router.include_routers(
+        group_commands.router,
+        group_talk.router
+    )
+    group_talk.router.message.middleware(GroupToUserMiddleware())
 
 
     return [

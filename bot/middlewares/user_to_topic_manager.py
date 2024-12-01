@@ -104,6 +104,7 @@ class TopicFinderUserToGroup(BaseMiddleware):
 
         return new_topic
 
+    # todo: this code duplicates topic_to_user_manager.py
     @staticmethod
     async def create_new_message_connection(
             message_connection: MessageConnectionFeedback,
