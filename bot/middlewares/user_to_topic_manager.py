@@ -7,7 +7,8 @@ from aiogram.types import ForumTopic, TelegramObject, Message, User
 from sqlalchemy.ext.asyncio import AsyncSession
 from structlog.types import FilteringBoundLogger
 
-from bot.db.models import Topic
+from bot.db.models import MessageConnection, Topic
+from bot.handlers_feedback import MessageConnectionFeedback
 
 logger: FilteringBoundLogger = structlog.get_logger()
 
@@ -27,6 +28,7 @@ class TopicFinderUserToGroup(BaseMiddleware):
     ) -> Any:
         session: AsyncSession = data["session"]
         user: User = event.from_user
+        data["forum_chat_id"] = self.forum_chat_id
 
         result = await session.execute(Topic.find_by_user_id(user.id))
         topic = result.scalar_one_or_none()
@@ -40,14 +42,22 @@ class TopicFinderUserToGroup(BaseMiddleware):
                 session=session,
             )
             if created_topic is None:
-                data["error"] = "failed to create topic"
+                data["error"] = "Failed to create topic"
             else:
                 data["topic_id"] = created_topic.message_thread_id
         else:
             await logger.adebug(f"Found topic for user {user.id}: {topic.topic_id}")
             data["topic_id"] = topic.topic_id
 
-        return await handler(event, data)
+        result = await handler(event, data)
+
+        if isinstance(result, MessageConnectionFeedback):
+            await self.create_new_message_connection(
+                message_connection=result,
+                session=session,
+            )
+
+        return result
 
     async def create_topic(
             self,
@@ -80,7 +90,6 @@ class TopicFinderUserToGroup(BaseMiddleware):
                 new_topic_in_db = Topic(
                     user_id=user.id,
                     topic_id=new_topic.message_thread_id,
-                    first_message_id=999,  # todo: fix this
                 )
                 session.add(new_topic_in_db)
 
@@ -94,3 +103,24 @@ class TopicFinderUserToGroup(BaseMiddleware):
                 await logger.aexception("Failed to save topic to database")
 
         return new_topic
+
+    @staticmethod
+    async def create_new_message_connection(
+            message_connection: MessageConnectionFeedback,
+            session: AsyncSession,
+    ):
+        new_obj = MessageConnection(
+            from_chat_id=message_connection.from_chat_id,
+            from_message_id=message_connection.from_message_id,
+            to_chat_id=message_connection.to_chat_id,
+            to_message_id=message_connection.to_message_id,
+        )
+        session.add(new_obj)
+        try:
+            await session.commit()
+            await logger.adebug(
+                f"Successfully saved messages pair to database",
+                details=new_obj.as_dict(),
+            )
+        except:
+            await logger.aexception("Failed to save messages pair to database")
