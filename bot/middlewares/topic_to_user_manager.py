@@ -1,18 +1,18 @@
 from typing import Callable, Awaitable, Dict, Any
 
 import structlog
-from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject, Message
 from sqlalchemy.ext.asyncio import AsyncSession
 from structlog.types import FilteringBoundLogger
 
-from bot.db.models import MessageConnection, Topic
+from bot.db.models import Topic
 from bot.handlers_feedback import MessageConnectionFeedback
+from bot.middlewares import ConnectionMiddleware
 
 logger: FilteringBoundLogger = structlog.get_logger()
 
 
-class GroupToUserMiddleware(BaseMiddleware):
+class GroupToUserMiddleware(ConnectionMiddleware):
     async def __call__(
             self,
             handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
@@ -31,6 +31,13 @@ class GroupToUserMiddleware(BaseMiddleware):
             await logger.adebug(f"Found user for topic {topic.topic_id}: {topic.user_id}")
             data["user_id"] = topic.user_id
 
+        # If it is a reply to some other message, try to find it.
+        if (reply := event.reply_to_message) is not None:
+            data["reply_to_message_id"] = await self.find_replied_message_pair(
+                reply_message=reply,
+                session=session,
+            )
+
         result = await handler(event, data)
 
         if isinstance(result, MessageConnectionFeedback):
@@ -40,26 +47,3 @@ class GroupToUserMiddleware(BaseMiddleware):
             )
 
         return result
-
-
-    # todo: this code duplicates user_to_topic_manager.py
-    @staticmethod
-    async def create_new_message_connection(
-            message_connection: MessageConnectionFeedback,
-            session: AsyncSession,
-    ):
-        new_obj = MessageConnection(
-            from_chat_id=message_connection.from_chat_id,
-            from_message_id=message_connection.from_message_id,
-            to_chat_id=message_connection.to_chat_id,
-            to_message_id=message_connection.to_message_id,
-        )
-        session.add(new_obj)
-        try:
-            await session.commit()
-            await logger.adebug(
-                f"Successfully saved messages pair to database",
-                details=new_obj.as_dict(),
-            )
-        except:
-            await logger.aexception("Failed to save messages pair to database")

@@ -1,7 +1,7 @@
 import structlog
 from aiogram import F, Router
 from aiogram.exceptions import TelegramAPIError
-from aiogram.types import Message, MessageId
+from aiogram.types import Message, MessageId, ReplyParameters
 from structlog.types import FilteringBoundLogger
 
 from bot.handlers_feedback import MessageConnectionFeedback
@@ -15,14 +15,24 @@ async def any_text_message(
         message: Message,
         user_id: int | None = None,
         error: str | None = None,
+        reply_to_message_id: int | None = None,
 ):
     if error is not None:
         await message.answer(error)
         return
 
+    # If message is reply to another message, set parameters
+    reply_parameters = None
+    if reply_to_message_id is not None:
+        reply_parameters = ReplyParameters(
+            message_id=reply_to_message_id,
+            allow_sending_without_reply=True,
+        )
+
     try:
         result: MessageId = await message.copy_to(
             chat_id=user_id,
+            reply_parameters=reply_parameters,
         )
         return MessageConnectionFeedback(
             from_chat_id=message.chat.id,

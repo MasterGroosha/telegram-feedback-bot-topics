@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import UniqueConstraint, func, select, TIMESTAMP
+from sqlalchemy import UniqueConstraint, func, select, and_, TIMESTAMP
 from sqlalchemy.dialects.postgresql import UUID, BIGINT, INTEGER
 from sqlalchemy.orm import mapped_column, Mapped
 
@@ -27,6 +27,30 @@ class MessageConnection(Base):
         server_default=func.now(),
         nullable=False,
     )
+
+    @classmethod
+    def find_reply_message(
+            cls,
+            chat_id: int,
+            message_id: int,
+            originated_from_user: bool,
+    ):
+        if originated_from_user:
+            chat_search_condition = cls.from_chat_id == chat_id
+            message_search_condition = cls.from_message_id == message_id
+        else:
+            chat_search_condition = cls.to_chat_id == chat_id
+            message_search_condition = cls.to_message_id == message_id
+
+        return (
+            select(cls)
+            .where(
+                and_(
+                    chat_search_condition,
+                    message_search_condition,
+                )
+            )
+        )
 
     def as_dict(self) -> dict:
         return {
