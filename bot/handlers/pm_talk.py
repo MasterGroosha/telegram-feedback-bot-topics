@@ -20,7 +20,7 @@ async def any_forwardable_message(
         await message.answer(error)
         return
 
-    # If message has caption and it's too long, then we cannot copy it.
+    # If message has caption, and it's too long, then we cannot copy it.
     # Actually, we should be able to copy it, but since it's forum topic, we cannot.
     # See https://github.com/tdlib/telegram-bot-api/issues/334#issuecomment-1311709507
     if caption_length is not None and caption_length > 1023:
