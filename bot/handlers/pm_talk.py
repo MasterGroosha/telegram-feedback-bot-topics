@@ -1,11 +1,14 @@
+import structlog
 from aiogram import Router
+from aiogram.exceptions import TelegramAPIError
 from aiogram.types import Message, MessageId, ReplyParameters
+from structlog.types import FilteringBoundLogger
 
 from bot.filters import ForwardableTypesFilter
 from bot.handlers_feedback import MessageConnectionFeedback
 
 router = Router()
-
+logger: FilteringBoundLogger = structlog.get_logger()
 
 @router.message(ForwardableTypesFilter())
 async def any_forwardable_message(
@@ -38,18 +41,22 @@ async def any_forwardable_message(
             allow_sending_without_reply=True,
         )
 
-    # Maybe use try/except here?
-    result: MessageId = await message.copy_to(
-        chat_id=forum_chat_id,
-        message_thread_id=topic_id,
-        reply_parameters=reply_parameters,
-    )
-    return MessageConnectionFeedback(
-        from_chat_id=message.chat.id,
-        from_message_id=message.message_id,
-        to_chat_id=forum_chat_id,
-        to_message_id=result.message_id,
-    )
+    try:
+        result: MessageId = await message.copy_to(
+            chat_id=forum_chat_id,
+            message_thread_id=topic_id,
+            reply_parameters=reply_parameters,
+        )
+        return MessageConnectionFeedback(
+            from_chat_id=message.chat.id,
+            from_message_id=message.message_id,
+            to_chat_id=forum_chat_id,
+            to_message_id=result.message_id,
+        )
+    except TelegramAPIError as ex:
+        reason = "Failed to send message from forum group to private chat"
+        await logger.aexception(reason)
+        await message.reply("Failed to deliver your message. Please try again later.")
 
 
 @router.message()
