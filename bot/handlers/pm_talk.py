@@ -56,7 +56,10 @@ async def any_forwardable_message(
     except TelegramAPIError as ex:
         reason = "Failed to send message from forum group to private chat"
         await logger.aexception(reason)
-        await message.reply("Failed to deliver your message. Please try again later.")
+        await message.reply(
+            f"Failed to deliver your message. Please try again later.\n"
+            f"{ex.__class__.__name__}: {str(ex)}"
+        )
 
 
 @router.message()
