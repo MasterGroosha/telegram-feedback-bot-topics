@@ -13,7 +13,6 @@ separate different users to different topics. This bot is the result of evolutio
 
 * Python 3.12
 * PostgreSQL 16
-* Redis 7.x
 * aiogram 3.x
 * SQLAlchemy 2.x
 * psycopg3 (aka psycopg)  
