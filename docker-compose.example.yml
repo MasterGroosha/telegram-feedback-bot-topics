@@ -11,15 +11,3 @@ services:
     volumes:
       - "./postgres-data:/var/lib/postgresql/data"
       - "./postgres-firstrun/init-user-db.sh:/docker-entrypoint-initdb.d/init-user-db.sh:ro"
-
-  redis:
-    image: redis:7
-    volumes:
-      - "./redis-data:/data"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 30s
-      retries: 50
-    restart: "always"
-    command: 'redis-server --save 60 1 --loglevel warning'
