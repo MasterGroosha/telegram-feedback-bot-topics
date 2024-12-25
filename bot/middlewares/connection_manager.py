@@ -6,7 +6,7 @@ from aiogram.types import TelegramObject, Message
 from sqlalchemy.ext.asyncio import AsyncSession
 from structlog.types import FilteringBoundLogger
 
-from bot.db.models import MessageConnection, Topic
+from bot.db.models import MessageConnection
 from bot.handlers_feedback import MessageConnectionFeedback
 
 logger: FilteringBoundLogger = structlog.get_logger()
@@ -44,12 +44,33 @@ class ConnectionMiddleware(BaseMiddleware):
 
 
     @staticmethod
+    async def find_message_pair(
+            message: Message,
+            session: AsyncSession,
+    ) -> MessageConnection | None:
+        query = MessageConnection.find_pair_message(
+            message.chat.id,
+            message.message_id,
+            originated_from_user=True,
+        )
+        search_result = await session.execute(query)
+        pair = search_result.scalar_one_or_none()
+        if pair is not None:
+            await logger.adebug(
+                "Found pair message",
+                details=pair.as_dict(),
+            )
+            return pair
+        return None
+
+
+    @staticmethod
     async def find_replied_message_pair(
             reply_message: Message,
             session: AsyncSession,
     ) -> MessageConnection | None:
         is_reply_to_user_message = not reply_message.from_user.is_bot
-        query = MessageConnection.find_reply_message(
+        query = MessageConnection.find_pair_message(
             reply_message.chat.id,
             reply_message.message_id,
             is_reply_to_user_message,

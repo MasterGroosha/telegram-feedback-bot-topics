@@ -1,7 +1,10 @@
 import structlog
-from aiogram import Router
+from aiogram import Bot, F, Router
 from aiogram.exceptions import TelegramAPIError
-from aiogram.types import Message, MessageId, ReplyParameters
+from aiogram.types import (
+    Message, MessageId, ReplyParameters,
+    InputMediaAnimation, InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo,
+)
 from structlog.types import FilteringBoundLogger
 
 from bot.filters import ForwardableTypesFilter
@@ -53,12 +56,11 @@ async def any_forwardable_message(
             to_chat_id=forum_chat_id,
             to_message_id=result.message_id,
         )
-    except TelegramAPIError as ex:
+    except TelegramAPIError:
         reason = "Failed to send message from forum group to private chat"
         await logger.aexception(reason)
         await message.reply(
-            f"Failed to deliver your message. Please try again later.\n"
-            f"{ex.__class__.__name__}: {str(ex)}"
+            f"Failed to deliver your message. Please try again later."
         )
 
 
@@ -70,3 +72,66 @@ async def any_non_forwardable_message(
         "Cannot forward this type of message. "
         "Try something else."
     )
+
+
+@router.edited_message(F.text)
+async def edited_text_message(
+        message: Message,
+        bot: Bot,
+        error: str | None = None,
+        edit_chat_id: int | None = None,
+        edit_message_id: int | None = None,
+):
+    if error is not None:
+        await message.answer(error)
+        return
+    try:
+        await bot.edit_message_text(
+            chat_id=edit_chat_id,
+            message_id=edit_message_id,
+            text=message.text,
+            entities=message.entities,
+        )
+    except TelegramAPIError:
+        error = "Failed to edit text message on group side"
+        await logger.aexception(error)
+
+
+@router.edited_message()  # All other types of editable media
+async def edited_media_message(
+        message: Message,
+        bot: Bot,
+        error: str | None = None,
+        edit_chat_id: int | None = None,
+        edit_message_id: int | None = None,
+):
+    if error is not None:
+        await message.answer(error)
+        return
+
+    if message.animation:
+        new_media = InputMediaAnimation(media=message.animation.file_id)
+    elif message.audio:
+        new_media = InputMediaAudio(media=message.audio.file_id)
+    elif message.document:
+        new_media = InputMediaDocument(media=message.document.file_id)
+    elif message.photo:
+        new_media = InputMediaPhoto(media=message.photo[-1].file_id)
+    elif message.video:
+        new_media = InputMediaVideo(media=message.video.file_id)
+    else:
+        return
+
+    if message.caption:
+        new_media.caption = message.caption
+        new_media.caption_entities = message.caption_entities
+
+    try:
+        await bot.edit_message_media(
+            chat_id=edit_chat_id,
+            message_id=edit_message_id,
+            media=new_media,
+        )
+    except TelegramAPIError:
+        error = "Failed to edit media message on group side"
+        await logger.aexception(error)

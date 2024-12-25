@@ -29,7 +29,7 @@ class MessageConnection(Base):
     )
 
     @classmethod
-    def find_reply_message(
+    def find_pair_message(
             cls,
             chat_id: int,
             message_id: int,
