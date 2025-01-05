@@ -5,6 +5,7 @@ from aiogram.types import (
     Message, MessageId, ReplyParameters,
     InputMediaAnimation, InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo,
 )
+from fluent.runtime import FluentLocalization
 from structlog.types import FilteringBoundLogger
 
 from bot.filters import ForwardableTypesFilter
@@ -17,6 +18,7 @@ logger: FilteringBoundLogger = structlog.get_logger()
 async def any_forwardable_message(
         message: Message,
         forum_chat_id: int,
+        l10n: FluentLocalization,
         topic_id: int | None = None,
         error: str | None = None,
         reply_to_message_id: int | None = None,
@@ -30,10 +32,7 @@ async def any_forwardable_message(
     # Actually, we should be able to copy it, but since it's forum topic, we cannot.
     # See https://github.com/tdlib/telegram-bot-api/issues/334#issuecomment-1311709507
     if caption_length is not None and caption_length > 1023:
-        await message.reply(
-            "The caption of this message is too long. "
-            "Please try again with shorter caption."
-        )
+        await message.reply(l10n.format_value("error-caption-too-long"))
         return
 
     # If message is reply to another message, set parameters
@@ -59,19 +58,15 @@ async def any_forwardable_message(
     except TelegramAPIError:
         reason = "Failed to send message from forum group to private chat"
         await logger.aexception(reason)
-        await message.reply(
-            f"Failed to deliver your message. Please try again later."
-        )
+        await message.reply(l10n.format_value("error-from-pm-to-group"))
 
 
 @router.message()
 async def any_non_forwardable_message(
         message: Message,
+        l10n: FluentLocalization,
 ):
-    await message.reply(
-        "Cannot forward this type of message. "
-        "Try something else."
-    )
+    await message.reply(l10n.format_value("error-non-forwardable-type"))
 
 
 @router.edited_message(F.text)

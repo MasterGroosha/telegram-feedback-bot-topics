@@ -2,6 +2,7 @@ from typing import Callable, Awaitable, Dict, Any
 
 import structlog
 from aiogram.types import TelegramObject, Message
+from fluent.runtime import FluentLocalization
 from sqlalchemy.ext.asyncio import AsyncSession
 from structlog.types import FilteringBoundLogger
 
@@ -20,13 +21,14 @@ class GroupToUserMiddleware(ConnectionMiddleware):
             data: Dict[str, Any],
     ) -> Any:
         session: AsyncSession = data["session"]
+        l10n: FluentLocalization = data["l10n"]
 
         result = await session.execute(Topic.find_by_topic_id(event.message_thread_id))
         topic = result.scalar_one_or_none()
 
         if not topic:
             await logger.aerror(f"No user found for topic {event.message_thread_id}")
-            data["error"] = "No user found for this topic"
+            data["error"] = l10n.format_value("error-no-user-found-for-topic")
         else:
             await logger.adebug(f"Found user for topic {topic.topic_id}: {topic.user_id}")
             data["user_id"] = topic.user_id

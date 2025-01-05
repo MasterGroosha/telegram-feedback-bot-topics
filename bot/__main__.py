@@ -2,11 +2,12 @@ import asyncio
 
 import structlog
 from aiogram import Bot, Dispatcher
-from structlog.typing import FilteringBoundLogger
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from structlog.typing import FilteringBoundLogger
 
 from bot.config_reader import get_config, LogConfig, BotConfig, DbConfig
+from bot.fluent_loader import get_fluent_localization
 from bot.handlers import get_routers
 from bot.logs import get_structlog_config
 from bot.middlewares import DbSessionMiddleware
@@ -18,7 +19,12 @@ async def main():
 
     bot_config: BotConfig = get_config(model=BotConfig, root_key="bot")
     bot = Bot(bot_config.token.get_secret_value())
-    dp = Dispatcher()
+
+    l10n = get_fluent_localization()
+
+    dp = Dispatcher(
+        l10n=l10n,
+    )
 
     db_config: DbConfig = get_config(model=DbConfig, root_key="db")
 

@@ -4,6 +4,7 @@ import structlog
 from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError
 from aiogram.types import ForumTopic, TelegramObject, Message, User
+from fluent.runtime import FluentLocalization
 from sqlalchemy.ext.asyncio import AsyncSession
 from structlog.types import FilteringBoundLogger
 
@@ -28,6 +29,8 @@ class TopicFinderUserToGroup(ConnectionMiddleware):
             data: Dict[str, Any],
     ) -> Any:
         session: AsyncSession = data["session"]
+        l10n: FluentLocalization = data["l10n"]
+
         user: User = event.from_user
         data["forum_chat_id"] = self.forum_chat_id
 
@@ -43,7 +46,7 @@ class TopicFinderUserToGroup(ConnectionMiddleware):
                 session=session,
             )
             if created_topic is None:
-                data["error"] = "Failed to create topic"
+                data["error"] = l10n.format_value("error-failed-to-create-topic")
             else:
                 data["topic_id"] = created_topic.message_thread_id
         else:

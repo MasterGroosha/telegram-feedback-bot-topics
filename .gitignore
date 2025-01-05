@@ -2,4 +2,4 @@
 .idea/
 /docker-compose.yml
 /settings.toml
-*.ftl
+/bot/locale/current/strings.ftl
