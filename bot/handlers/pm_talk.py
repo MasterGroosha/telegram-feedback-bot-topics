@@ -8,7 +8,7 @@ from aiogram.types import (
 from fluent.runtime import FluentLocalization
 from structlog.types import FilteringBoundLogger
 
-from bot.filters import ForwardableTypesFilter
+from bot.filters import ForwardableTypesFilter, ServiceMessagesFilter
 from bot.handlers_feedback import MessageConnectionFeedback
 
 router = Router()
@@ -59,6 +59,13 @@ async def any_forwardable_message(
         reason = "Failed to send message from forum group to private chat"
         await logger.aexception(reason)
         await message.reply(l10n.format_value("error-from-pm-to-group"))
+
+
+@router.message(ServiceMessagesFilter())
+async def any_service_message(
+        message: Message,
+):
+    return
 
 
 @router.message()

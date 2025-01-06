@@ -1,14 +1,15 @@
 # Build stage
-FROM python:3.12-slim as builder
+FROM python:3.11-slim as builder
 WORKDIR /app
+COPY alembic.ini /app/
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY bot alembic.ini /app/
+COPY bot /app/bot
 
 # Final stage
-FROM gcr.io/distroless/python3-debian12
-COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+FROM gcr.io/distroless/python3-debian12:nonroot
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /app /app
 WORKDIR /app
-ENV PYTHONPATH=/usr/local/lib/python3.12/site-packages
-CMD ["python", "-m", "bot"]
+ENV PYTHONPATH=/usr/local/lib/python3.11/site-packages
+CMD ["-m", "bot"]
