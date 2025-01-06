@@ -2,7 +2,7 @@ import structlog
 from aiogram import Bot, F, Router
 from aiogram.exceptions import TelegramAPIError
 from aiogram.types import (
-    Message, MessageId, ReplyParameters,
+    Message, MessageId, ReplyParameters, User,
     InputMediaAnimation, InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo,
 )
 from fluent.runtime import FluentLocalization
@@ -14,12 +14,36 @@ from bot.handlers_feedback import MessageConnectionFeedback
 router = Router()
 logger: FilteringBoundLogger = structlog.get_logger()
 
+
+def get_user_data(
+        l10n: FluentLocalization,
+        user: User,
+) -> dict:
+    premium_key = "yes" if user.is_premium else "no"
+    premium = l10n.format_value(premium_key, {"case": "lower"})
+
+    language_key = "unknown" if user.language_code is None else user.language_code
+    language = l10n.format_value(language_key, {"case": "lower"})
+    if user.username is not None:
+        username = f"@{user.username}"
+    else:
+        username = l10n.format_value("no", {"case": "lower"})
+    return {
+        "full_name": user.full_name,
+        "username": username,
+        "premium": premium,
+        "language": language,
+    }
+
+
 @router.message(ForwardableTypesFilter())
 async def any_forwardable_message(
         message: Message,
+        bot: Bot,
         forum_chat_id: int,
         l10n: FluentLocalization,
         topic_id: int | None = None,
+        new_topic_created: bool | None = None,
         error: str | None = None,
         reply_to_message_id: int | None = None,
         caption_length: int | None = None,
@@ -34,6 +58,26 @@ async def any_forwardable_message(
     if caption_length is not None and caption_length > 1023:
         await message.reply(l10n.format_value("error-caption-too-long"))
         return
+
+    if new_topic_created is True:
+        user_info = get_user_data(l10n, message.from_user)
+        user_info_text = l10n.format_value(
+            "user-info",
+            {
+                "full_name": user_info["full_name"],
+                "username": user_info["username"],
+                "premium": user_info["premium"],
+                "language": user_info["language"],
+            })
+        try:
+            await bot.send_message(
+                chat_id=forum_chat_id,
+                message_thread_id=topic_id,
+                text=user_info_text
+            )
+        except TelegramAPIError:
+            reason = "Failed to send intro info message from forum group to private chat"
+            await logger.aexception(reason)
 
     # If message is reply to another message, set parameters
     reply_parameters = None

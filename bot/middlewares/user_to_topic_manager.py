@@ -49,6 +49,7 @@ class TopicFinderUserToGroup(ConnectionMiddleware):
                 data["error"] = l10n.format_value("error-failed-to-create-topic")
             else:
                 data["topic_id"] = created_topic.message_thread_id
+                data["new_topic_created"] = True
         else:
             await logger.adebug(f"Found topic for user {user.id}: {topic.topic_id}")
             data["topic_id"] = topic.topic_id
