@@ -1,7 +1,17 @@
 #### Bot-specific settings ####
 [bot]
-  # Bot's token. Obtain from https://t.me/BotFather
-token = "1234567890:AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTt"
+# Bot's token. Obtain from https://t.me/BotFather
+token = "1234567890:AaBbCcDdEeFfGrOoShALlMmNnOoPpQqRrSs"
+
+# Id of the supergroup with forum enabled
+supergroup_id = -100987654321
+
+
+[db]
+# Full database connection string
+dsn = "postgresql+psycopg://user:password@host/db_name"
+# Whether to include SQLAlchemy internal logs in the output or not
+echo = false
 
 [logs]
 show_datetime = true
