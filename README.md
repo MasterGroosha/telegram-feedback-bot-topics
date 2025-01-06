@@ -11,8 +11,8 @@ separate different users to different topics. This bot is the result of evolutio
 
 ## Used technology
 
-* Python 3.12
-* PostgreSQL 16
+* Python 3.11
+* PostgreSQL 17
 * aiogram 3.x
 * SQLAlchemy 2.x
 * psycopg3 (aka psycopg)  
@@ -20,8 +20,4 @@ and more...
 
 ## Run
 
-You can use [docker-compose.example.yml](docker-compose.example.yml) file to deploy PostgreSQL and Redis locally. 
-Fill new user and database data in [init-user-db.sh](postgres-firstrun/init-user-db.sh) file or do it manually.
-
-Use `settings.yml` (based on [settings.example.yml](settings.example.yml)) to fill the necessary options, place your localization 
-files (see relevant [README](bot/locales/example/README.md)), then run this bot. Docker images will follow soon.
+(to be edited)
