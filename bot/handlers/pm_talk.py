@@ -100,7 +100,7 @@ async def any_forwardable_message(
             to_message_id=result.message_id,
         )
     except TelegramAPIError:
-        reason = "Failed to send message from forum group to private chat"
+        reason = "Failed to send message from private chat to forum group"
         await logger.aexception(reason)
         await message.reply(l10n.format_value("error-from-pm-to-group"))
 
