@@ -3,6 +3,23 @@ user-start =
     You can use me to message my owner and receive an answer from him. Just send a message here.
     Please note, that sometimes you might get a reply with some delay.
 
+user-info =
+    Full name: {$full_name}
+    Username: {$username}
+    Premium: {$premium}
+    Language: {$language}
+
+no =
+    { $case ->
+        [lower] no
+       *[upper] No
+    }
+
+yes =
+    { $case ->
+        [lower] yes
+       *[upper] Yes
+    }
 
 error-caption-too-long =
     The caption of this message is too long. Please try again with shorter caption.
