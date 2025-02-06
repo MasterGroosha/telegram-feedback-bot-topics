@@ -20,4 +20,8 @@ and more...
 
 ## Run
 
-(to be edited)
+* Clone this repo to your server and `cd` into it.
+* Clone `settings.example.toml` as `settings.toml` and fill the variables.
+* Clone `docker-compose.example.yml` as `docker-compose.yml` and edit PostgreSQL-related values to match those from `settings.toml`.
+* Pick an example language `.ftl` file from `bot/locale/examples`, edit to your choice, then place it somewhere and specify its path in `docker-compose.yml` under `bot` service.
+* Run the bot with migrations: `docker compose --profile migrate up --build`.
