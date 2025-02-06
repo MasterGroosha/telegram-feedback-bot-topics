@@ -1,0 +1,22 @@
+#### Bot-specific settings ####
+[bot]
+# Bot's token. Obtain from https://t.me/BotFather
+token = "1234567890:AaBbCcDdEeFfGrOoShALlMmNnOoPpQqRrSs"
+
+# Id of the supergroup with forum enabled
+supergroup_id = -100987654321
+
+
+[db]
+# Full database connection string
+dsn = "postgresql+psycopg://superuser:superpassword@postgres/feedback_bot"
+# Whether to include SQLAlchemy internal logs in the output or not
+echo = false
+
+[logs]
+show_datetime = true
+datetime_format = "%Y-%m-%d %H:%M:%S"
+show_debug_logs = true
+time_in_utc = false
+use_colors_in_console = true
+renderer = "console"

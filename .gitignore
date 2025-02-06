@@ -1,6 +1,7 @@
 /venv/
+/.venv/
 .idea/
 /docker-compose.yml
-/redis-data/
-/settings.yml
-*.ftl
+/settings.toml
+/bot/locale/current/strings.ftl
+/*.ftl

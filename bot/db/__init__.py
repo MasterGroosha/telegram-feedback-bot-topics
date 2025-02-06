@@ -1,9 +1,8 @@
 from .base import Base
-from .models import Ban, Message, Topic
+from .models import MessageConnection, Topic
 
 __all__ = [
     "Base",
-    "Ban",
-    "Message",
-    "Topic"
+    "MessageConnection",
+    "Topic",
 ]

@@ -1,13 +1,14 @@
+from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID, BIGINT, BOOLEAN, INTEGER
+from sqlalchemy import UniqueConstraint, func, select, and_, TIMESTAMP
+from sqlalchemy.dialects.postgresql import UUID, BIGINT, INTEGER
 from sqlalchemy.orm import mapped_column, Mapped
 
 from bot.db.base import Base
 
 
-class Message(Base):
+class MessageConnection(Base):
     __tablename__ = "messages"
     __table_args__ = (
         UniqueConstraint(
@@ -21,7 +22,43 @@ class Message(Base):
     from_message_id: Mapped[int] = mapped_column(BIGINT, nullable=False)
     to_chat_id: Mapped[int] = mapped_column(BIGINT, nullable=False)
     to_message_id: Mapped[int] = mapped_column(BIGINT, nullable=False)
-    incoming: Mapped[bool] = mapped_column(BOOLEAN, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    @classmethod
+    def find_pair_message(
+            cls,
+            chat_id: int,
+            message_id: int,
+            originated_from_user: bool,
+    ):
+        if originated_from_user:
+            chat_search_condition = cls.from_chat_id == chat_id
+            message_search_condition = cls.from_message_id == message_id
+        else:
+            chat_search_condition = cls.to_chat_id == chat_id
+            message_search_condition = cls.to_message_id == message_id
+
+        return (
+            select(cls)
+            .where(
+                and_(
+                    chat_search_condition,
+                    message_search_condition,
+                )
+            )
+        )
+
+    def as_dict(self) -> dict:
+        return {
+            "from_chat_id": self.from_chat_id,
+            "from_message_id": self.from_message_id,
+            "to_chat_id": self.to_chat_id,
+            "to_message_id": self.to_message_id,
+        }
 
 
 class Topic(Base):
@@ -36,19 +73,19 @@ class Topic(Base):
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     user_id: Mapped[int] = mapped_column(BIGINT, nullable=False)
     topic_id: Mapped[int] = mapped_column(INTEGER, nullable=False)
-    first_message_id: Mapped[int] = mapped_column(INTEGER, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
 
-    def dict(self):
-        return {
-            "user_id": self.user_id,
-            "topic_id": self.topic_id,
-            "first_message_id": self.first_message_id
-        }
+    @classmethod
+    def find_by_user_id(cls, user_id: int):
+        return select(cls).where(Topic.user_id == user_id)
 
+    @classmethod
+    def find_by_topic_id(cls, topic_id: int):
+        return select(cls).where(Topic.topic_id == topic_id)
 
-class Ban(Base):
-    __tablename__ = "bans"
-
-    user_id: Mapped[int] = mapped_column(BIGINT, primary_key=True)
-    is_banned: Mapped[bool] = mapped_column(BOOLEAN, server_default="false")
-    is_shadowbanned: Mapped[bool] = mapped_column(BOOLEAN, server_default="false")
+    def __repr__(self):
+        return f"Topic #{self.topic_id} for user {self.user_id}"

@@ -1,0 +1,1 @@
+Place your `strings.ftl` file here or pass it here inside the Docker container

@@ -1,17 +1,14 @@
-from .albums_collector import AlbumsMiddleware
-from .bans import BansMiddleware
-from .context import UserTopicContextMiddleware
-from .db import DbSessionMiddleware
-from .edited_messages import EditedMessagesMiddleware
-from .message_connections import MessageConnectionsMiddleware
-from .topics_management import TopicsManagementMiddleware
+from .session import DbSessionMiddleware
+from .connection_manager import ConnectionMiddleware
+from .user_to_topic_manager import TopicFinderUserToGroup
+from .topic_to_user_manager import GroupToUserMiddleware
+from .find_pair_upon_edit import FindPairToEditMiddleware
+
 
 __all__ = [
-    "AlbumsMiddleware",
-    "BansMiddleware",
-    "UserTopicContextMiddleware",
     "DbSessionMiddleware",
-    "EditedMessagesMiddleware",
-    "MessageConnectionsMiddleware",
-    "TopicsManagementMiddleware",
+    "ConnectionMiddleware",  # not used directly
+    "TopicFinderUserToGroup",
+    "GroupToUserMiddleware",
+    "FindPairToEditMiddleware",
 ]

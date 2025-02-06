@@ -1,25 +1,47 @@
-version: '3.1'
+name: "telegram-feedback-bot-topics"
 
 services:
   postgres:
-    image: postgres:15-alpine
-    restart: "always"
+    image: postgres:17
+    container_name: postgres
+    restart: always
+    # Use your credentials here
     environment:
-      # Superuser username/password
       POSTGRES_USER: superuser
       POSTGRES_PASSWORD: superpassword
+      POSTGRES_DB: feedback_bot
     volumes:
-      - "./postgres-data:/var/lib/postgresql/data"
-      - "./postgres-firstrun/init-user-db.sh:/docker-entrypoint-initdb.d/init-user-db.sh:ro"
+      - postgres_data:/var/lib/postgresql/data
 
-  redis:
-    image: redis:7
+  bot:
+    build:
+      context: "."
+      dockerfile: "Dockerfile"
+    environment:
+      - CONFIG_FILE_PATH=/app/settings.toml
+    # Make sure to create settings.toml with necessary config parameters.
+    # Also copy any language file and place it in the root of your project.
     volumes:
-      - "./redis-data:/data"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 30s
-      retries: 50
-    restart: "always"
-    command: 'redis-server --save 60 1 --loglevel warning'
+      - "./settings.toml:/app/settings.toml:ro"
+      - "./ru.ftl:/app/bot/locale/current/strings.ftl:ro"
+    depends_on:
+      - postgres
+
+
+  migrations:
+    profiles:
+      - "migrate"
+    build:
+      context: "."
+      dockerfile: "Dockerfile"
+    environment:
+      - CONFIG_FILE_PATH=/app/settings.toml
+    volumes:
+      - "./settings.toml:/app/settings.toml:ro"
+    depends_on:
+      - postgres
+    command: ["-m", "alembic", "upgrade", "head"]
+
+
+volumes:
+  postgres_data:

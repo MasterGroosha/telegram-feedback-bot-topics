@@ -2,57 +2,47 @@ import asyncio
 
 import structlog
 from aiogram import Bot, Dispatcher
-from aiogram.fsm.storage.memory import MemoryStorage, SimpleEventIsolation
-from aiogram.fsm.storage.redis import RedisStorage
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from structlog.typing import FilteringBoundLogger
 
-from bot.config_reader import parse_settings, FSMModeEnum, Settings
+from bot.config_reader import get_config, LogConfig, BotConfig, DbConfig
 from bot.fluent_loader import get_fluent_localization
-from bot.handlers import attach_routers_and_middlewares
-
-# from cachetools import LRUCache
-
-logger: structlog.BoundLogger = structlog.get_logger()
+from bot.handlers import get_routers
+from bot.logs import get_structlog_config
+from bot.middlewares import DbSessionMiddleware
 
 
 async def main():
-    config: Settings = parse_settings()
-    engine = create_async_engine(url=str(config.postgres.dsn), echo=True)
-    sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
+    log_config: LogConfig = get_config(model=LogConfig, root_key="logs")
+    structlog.configure(**get_structlog_config(log_config))
 
-    if config.bot.fsm_mode == FSMModeEnum.MEMORY:
-        storage = MemoryStorage()
-    else:
-        storage = RedisStorage.from_url(
-            url=str(config.redis.dsn),
-            connection_kwargs={"decode_responses": True}
-        )
+    bot_config: BotConfig = get_config(model=BotConfig, root_key="bot")
+    bot = Bot(bot_config.token.get_secret_value())
 
-    # bans_cache = LRUCache(maxsize=5000)
-    # shadowbans_cache = LRUCache(maxsize=5000)
+    l10n = get_fluent_localization()
 
-    # Loading localization for bot
-    l10n = get_fluent_localization(config.bot.language)
-
-    bot = Bot(token=config.bot.token.get_secret_value())
     dp = Dispatcher(
-        forum_chat_id=config.bot.forum_supergroup_id,
-        topics_to_ignore=config.bot.ignored_topics_ids,
-        storage=storage,
-        l10n=l10n
-    )
-    if not config.bot.albums_preserve_enabled:
-        dp.fsm.events_isolation = SimpleEventIsolation()
-
-    attach_routers_and_middlewares(
-        dispatcher=dp,
-        bot_config=config.bot,
-        sessionmaker=sessionmaker
+        l10n=l10n,
     )
 
-    await logger.ainfo("Starting Bot")
-    await bot.delete_webhook()
-    await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
+    db_config: DbConfig = get_config(model=DbConfig, root_key="db")
+
+    engine = create_async_engine(
+        url=str(db_config.dsn),
+    )
+    async with engine.begin() as conn:
+        await conn.execute(text("SELECT 1"))
+
+    Sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
+    dp.update.outer_middleware(DbSessionMiddleware(Sessionmaker))
+
+    dp.include_routers(*get_routers(supergroup_id=bot_config.supergroup_id))
+
+    logger: FilteringBoundLogger = structlog.get_logger()
+    await logger.ainfo("Starting polling...")
+
+    await dp.start_polling(bot)
 
 
 asyncio.run(main())
