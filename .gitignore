@@ -1,5 +1,7 @@
 /venv/
+/.venv/
 .idea/
 /docker-compose.yml
 /settings.toml
 /bot/locale/current/strings.ftl
+/*.ftl

@@ -9,7 +9,7 @@ supergroup_id = -100987654321
 
 [db]
 # Full database connection string
-dsn = "postgresql+psycopg://user:password@host/db_name"
+dsn = "postgresql+psycopg://superuser:superpassword@postgres/feedback_bot"
 # Whether to include SQLAlchemy internal logs in the output or not
 echo = false
 
